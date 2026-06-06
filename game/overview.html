@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>배금도시 — 스토리 아틀라스</title>
+<style>
+  :root{
+    --ink:#f5efe2; --muted:#9a9384; --bg:#0e0f12; --panel:#181a1e; --panel2:#202329;
+    --line:rgba(245,239,226,.14); --gold:#d8b45d; --red:#e0483c; --green:#1db089; --blue:#3f7fe6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--bg); color:var(--ink); font-family:"Gothic A1",system-ui,sans-serif; line-height:1.5; padding:18px; }
+  a{color:inherit}
+  h1{font-size:20px; font-weight:800}
+  .sub{color:var(--muted); font-size:13px; margin-top:2px}
+
+  .toolbar{position:sticky; top:0; z-index:5; background:rgba(14,15,18,.96); backdrop-filter:blur(4px);
+    border-bottom:1px solid var(--line); padding:12px 4px; margin:-18px -18px 16px; padding-inline:18px}
+  .pills{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+  .pill{font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--panel)}
+  .pill b{color:var(--gold)}
+  .pill.bad b{color:var(--red)}
+  .pill.warn b{color:var(--gold)}
+  .pill.ok b{color:var(--green)}
+  .note-actions{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px}
+  .note-btn{border:1px solid var(--line); background:var(--panel2); color:var(--ink); border-radius:7px;
+    padding:6px 10px; font:inherit; font-size:12px; font-weight:800; cursor:pointer}
+  .note-btn:hover{border-color:var(--gold)}
+  .note-btn.primary{background:var(--gold); color:#17130b; border-color:var(--gold)}
+  .note-status{font-size:12px; color:var(--muted)}
+  .note-status.ok{color:var(--green)}
+  .note-status.warn{color:var(--gold)}
+
+  details{margin-bottom:14px; border:1px solid var(--line); border-radius:10px; background:var(--panel); overflow:hidden}
+  summary{cursor:pointer; padding:10px 14px; font-weight:800; font-size:14px; list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ "; color:var(--muted)}
+  details[open] summary::before{content:"▾ "}
+  .pad{padding:6px 14px 14px}
+
+  .problem{font-size:13px; padding:3px 0; color:var(--muted)}
+  .problem a{color:var(--blue); text-decoration:underline; cursor:pointer}
+  .problem.red a{color:var(--red)}
+
+  .legend{display:flex; flex-wrap:wrap; gap:6px}
+
+  .group{margin:22px 0 8px}
+  .group h2{font-size:15px; color:var(--gold); border-left:3px solid var(--gold); padding-left:8px}
+  .group .gcount{color:var(--muted); font-size:12px; font-weight:700; margin-left:6px}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-top:10px}
+  .card{border:1px solid var(--line); border-radius:12px; background:var(--panel2); padding:12px; scroll-margin-top:90px}
+  .card.is-start{border-color:var(--green)}
+  .card.is-end{border-color:var(--gold)}
+  .card.is-orphan{border-color:var(--red); background:#241b1c}
+  .card.is-dead{border-color:var(--red)}
+
+  .id{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; font-weight:800; color:var(--gold)}
+  .type{font-size:11px; color:var(--muted); margin-left:6px}
+  .badges{float:right; display:flex; gap:4px}
+  .bdg{font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px; border:1px solid var(--line); color:var(--muted)}
+  .bdg.start{color:var(--green); border-color:var(--green)}
+  .bdg.end{color:var(--gold); border-color:var(--gold)}
+  .bdg.orphan,.bdg.dead{color:var(--red); border-color:var(--red)}
+  .bdg.secret{color:var(--blue); border-color:var(--blue)}
+
+  .hd{font-size:12px; color:var(--muted); margin-top:6px}
+  .sp{font-size:12px; color:var(--gold); font-weight:800; margin-top:6px}
+  .tx{font-size:13px; white-space:pre-line; color:#e7e0d2; margin-top:6px; max-height:7.5em; overflow:auto;
+     border-left:2px solid var(--line); padding-left:8px}
+  .thumb{width:100%; aspect-ratio:16/9; margin-top:8px; border:1px solid var(--line); border-radius:8px;
+    overflow:hidden; background:#0b0c0f; display:flex; align-items:center; justify-content:center}
+  .thumb img{width:100%; height:100%; object-fit:contain; display:block; background:#0b0c0f}
+  .thumb.placeholder{padding:12px; color:var(--muted); font-size:12px; text-align:center; border-style:dashed}
+  .note-box{margin-top:10px; border-top:1px solid var(--line); padding-top:8px}
+  .note-label{font-size:11px; font-weight:800; color:var(--muted); margin-bottom:5px}
+  .note-box textarea{width:100%; min-height:70px; resize:vertical; border:1px solid var(--line); border-radius:8px;
+    background:#101216; color:var(--ink); padding:8px; font:inherit; font-size:12px; line-height:1.45}
+  .note-box textarea:focus{outline:none; border-color:var(--gold)}
+  .card.has-note{box-shadow:0 0 0 1px rgba(216,180,93,.32)}
+
+  .chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
+  .chip{font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; border:1px solid var(--line)}
+  .chip.stat{color:#eab; border-color:rgba(224,72,60,.4)}
+  .chip.flag{color:#9cd; border-color:rgba(63,127,230,.4)}
+  .chip.money{color:var(--green); border-color:rgba(29,176,137,.4)}
+  .chip.pos::after{content:""}
+  .chip .v{opacity:.85}
+
+  .edges{margin-top:10px; border-top:1px dashed var(--line); padding-top:8px; display:flex; flex-direction:column; gap:7px}
+  .edge{font-size:12px}
+  .edge .lab{color:#d7cfbf}
+  .edge a.to{font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:800; color:var(--blue);
+    text-decoration:none; border-bottom:1px dotted var(--blue)}
+  .edge a.to.broken{color:var(--red); border-color:var(--red)}
+  .edge a.to.runtime{color:var(--gold); border-color:var(--gold)}
+  .edge .rt{font-size:10px; color:var(--gold)}
+
+  .empty{color:var(--muted); padding:40px; text-align:center}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace}
+  footer{color:var(--muted); font-size:12px; margin:30px 0 10px; text-align:center}
+</style>
+</head>
+<body>
+  <div id="app"><div class="empty">불러오는 중…</div></div>
+
+  <!-- 게임과 같은 데이터 사용 -->
+  <script src="data/scenes.js"></script>
+  <script src="atlas.js"></script>
+  <script>
+  (function(){
+    var app = document.getElementById('app');
+    if(!window.STORY){ app.innerHTML = '<div class="empty">scenes.js를 못 읽었어요. game/ 폴더에서 열어주세요.</div>'; return; }
+    var M = window.Atlas.build(window.STORY);
+    var H = M.health;
+    var esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+    var NOTE_STORAGE_KEY = 'baegeumdosi-atlas-notes-v1';
+    var noteFileHandle = null;
+    var notes = loadStoredNotes();
+
+    function deltaChips(deltas){
+      if(!deltas || !deltas.length) return '';
+      return '<div class="chips">' + deltas.map(function(d){
+        var cls = d.kind==='money' ? 'money' : d.kind==='flag' ? 'flag' : 'stat';
+        var v = (typeof d.val==='number' && d.val>0 ? '+' : '') + d.val;
+        return '<span class="chip '+cls+'">'+esc(d.name)+' <span class="v">'+esc(v)+'</span></span>';
+      }).join('') + '</div>';
+    }
+
+    function badgeHTML(b){
+      var map={'시작':'start','엔딩':'end','고아':'orphan','막다른':'dead','비밀':'secret'};
+      return '<span class="bdg '+(map[b]||'')+'">'+esc(b)+'</span>';
+    }
+
+    function imageHTML(img){
+      if(!img) return '';
+      if(img.kind === 'file'){
+        return '<div class="thumb"><img src="'+esc(img.src)+'" loading="lazy" alt=""></div>';
+      }
+      if(img.kind === 'placeholder'){
+        return '<div class="thumb placeholder">'+esc(img.label || '이미지 예정')+'</div>';
+      }
+      return '';
+    }
+
+    function noteHTML(s){
+      return '<div class="note-box">'
+        + '<div class="note-label">메모</div>'
+        + '<textarea data-note-scene="'+esc(s.id)+'" placeholder="수정 지시, 대사 교체, 분기 아이디어">'+esc(notes[s.id] || '')+'</textarea>'
+        + '</div>';
+    }
+
+    function cardHTML(s){
+      var cls = 'card';
+      if(s.badges.indexOf('시작')>=0) cls+=' is-start';
+      if(s.badges.indexOf('엔딩')>=0) cls+=' is-end';
+      if(s.badges.indexOf('고아')>=0) cls+=' is-orphan';
+      if(s.badges.indexOf('막다른')>=0) cls+=' is-dead';
+      if((notes[s.id] || '').trim()) cls+=' has-note';
+
+      var edges = s.edges.map(function(e){
+        var toCls = 'to' + (e.kind==='broken'?' broken':e.kind==='runtime'?' runtime':'');
+        var rt = e.kind==='runtime' ? ' <span class="rt">(런타임 분기)</span>'
+               : e.kind==='broken' ? ' <span class="rt" style="color:var(--red)">(타겟 없음!)</span>' : '';
+        return '<div class="edge"><span class="lab">'+esc(e.label)+'</span> '
+             + '<a class="'+toCls+'" href="#scene-'+esc(e.target)+'">'+esc(e.target)+'</a>'+rt
+             + deltaChips(e.deltas) + '</div>';
+      }).join('');
+
+      return '<div class="'+cls+'" id="scene-'+esc(s.id)+'">'
+        + '<div class="badges">'+s.badges.map(badgeHTML).join('')+'</div>'
+        + '<span class="id">'+esc(s.id)+'</span><span class="type">'+esc(s.type)+'</span>'
+        + (s.header?'<div class="hd">'+esc(s.header)+'</div>':'')
+        + imageHTML(s.image)
+        + (s.speaker?'<div class="sp">'+esc(s.speaker)+'</div>':'')
+        + (s.text?'<div class="tx">'+esc(s.text)+'</div>':'')
+        + deltaChips(s.deltas)
+        + (edges?'<div class="edges">'+edges+'</div>':'')
+        + noteHTML(s)
+        + '</div>';
+    }
+
+    function loadStoredNotes(){
+      try {
+        return JSON.parse(localStorage.getItem(NOTE_STORAGE_KEY) || '{}') || {};
+      } catch(e) {
+        return {};
+      }
+    }
+
+    function cleanNotes(obj){
+      var out = {};
+      Object.keys(obj || {}).forEach(function(id){
+        var val = String(obj[id] == null ? '' : obj[id]).trim();
+        if(val) out[id] = val;
+      });
+      return out;
+    }
+
+    function persistNotes(){
+      localStorage.setItem(NOTE_STORAGE_KEY, JSON.stringify(notes));
+      updateNoteCount();
+    }
+
+    function orderedSceneIds(){
+      var ids = [];
+      M.groups.forEach(function(g){ g.scenes.forEach(function(s){ ids.push(s.id); }); });
+      return ids;
+    }
+
+    function serializeNotes(){
+      notes = cleanNotes(notes);
+      var known = {};
+      var ids = orderedSceneIds();
+      ids.forEach(function(id){ known[id] = true; });
+      Object.keys(notes).forEach(function(id){ if(!known[id]) ids.push(id); });
+
+      var body = ids.filter(function(id){ return notes[id]; }).map(function(id){
+        return '## ' + id + '\n' + notes[id].trim();
+      }).join('\n\n');
+
+      return '# 배금도시 아틀라스 메모\n\n'
+        + '> Codex에게 "아틀라스 메모 반영해줘"라고 말하면 이 파일의 씬별 메모를 기준으로 반영합니다.\n'
+        + '> 형식: `## scene_id` 아래에 수정 지시를 적습니다.\n\n'
+        + (body ? body + '\n' : '');
+    }
+
+    function parseNotes(md){
+      var out = {};
+      var current = null;
+      var lines = [];
+      function flush(){
+        if(current){
+          var text = lines.join('\n').trim();
+          if(text) out[current] = text;
+        }
+      }
+      String(md || '').split(/\r?\n/).forEach(function(line){
+        var m = line.match(/^##\s+([A-Za-z0-9_.:-]+)/);
+        if(m){
+          flush();
+          current = m[1];
+          lines = [];
+        } else if(current) {
+          lines.push(line);
+        }
+      });
+      flush();
+      return out;
+    }
+
+    function setStatus(msg, cls){
+      var el = document.getElementById('noteStatus');
+      if(!el) return;
+      el.className = 'note-status' + (cls ? ' ' + cls : '');
+      el.textContent = msg;
+    }
+
+    function updateNoteCount(){
+      var count = Object.keys(cleanNotes(notes)).length;
+      setStatus('메모 ' + count + '개', count ? 'ok' : '');
+    }
+
+    function applyNotesToCards(){
+      document.querySelectorAll('[data-note-scene]').forEach(function(el){
+        var id = el.getAttribute('data-note-scene');
+        el.value = notes[id] || '';
+        var card = el.closest('.card');
+        if(card) card.classList.toggle('has-note', !!(el.value || '').trim());
+      });
+      persistNotes();
+    }
+
+    async function openNotesFile(){
+      if(!window.showOpenFilePicker){
+        setStatus('파일 불러오기는 이 브라우저에서 미지원', 'warn');
+        return;
+      }
+      try {
+        var picked = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'], 'text/plain': ['.txt'] } }],
+        });
+        noteFileHandle = picked[0];
+        var file = await noteFileHandle.getFile();
+        notes = parseNotes(await file.text());
+        applyNotesToCards();
+        setStatus(file.name + ' 불러옴', 'ok');
+      } catch(e) {
+        if(e && e.name !== 'AbortError') setStatus('불러오기 실패', 'warn');
+      }
+    }
+
+    function downloadNotes(md){
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
+      a.download = 'atlas-notes.md';
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+    async function saveNotesFile(){
+      var md = serializeNotes();
+      persistNotes();
+      if(window.showSaveFilePicker){
+        try {
+          if(!noteFileHandle){
+            noteFileHandle = await window.showSaveFilePicker({
+              suggestedName: 'atlas-notes.md',
+              types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'], 'text/plain': ['.txt'] } }],
+            });
+          }
+          var writable = await noteFileHandle.createWritable();
+          await writable.write(md);
+          await writable.close();
+          setStatus('atlas-notes.md 저장됨', 'ok');
+          return;
+        } catch(e) {
+          if(e && e.name === 'AbortError') return;
+        }
+      }
+      downloadNotes(md);
+      setStatus('atlas-notes.md 다운로드됨', 'warn');
+    }
+
+    async function copyNotes(){
+      var md = serializeNotes();
+      persistNotes();
+      try {
+        await navigator.clipboard.writeText(md);
+        setStatus('메모 md 복사됨', 'ok');
+      } catch(e) {
+        setStatus('복사 실패. 저장 버튼을 사용', 'warn');
+      }
+    }
+
+    function bindNotes(){
+      app.addEventListener('input', function(e){
+        var el = e.target;
+        if(!el || !el.matches('[data-note-scene]')) return;
+        var id = el.getAttribute('data-note-scene');
+        notes[id] = el.value;
+        var card = el.closest('.card');
+        if(card) card.classList.toggle('has-note', !!el.value.trim());
+        persistNotes();
+      });
+      var openBtn = document.getElementById('noteOpen');
+      var saveBtn = document.getElementById('noteSave');
+      var copyBtn = document.getElementById('noteCopy');
+      if(openBtn) openBtn.addEventListener('click', openNotesFile);
+      if(saveBtn) saveBtn.addEventListener('click', saveNotesFile);
+      if(copyBtn) copyBtn.addEventListener('click', copyNotes);
+      updateNoteCount();
+    }
+
+    // ----- 헤더 / 건강검진 -----
+    var endTxt = H.reachableEndings.length + '/' + H.endings.length;
+    var pills = ''
+      + '<span class="pill">씬 <b>'+H.sceneCount+'</b></span>'
+      + '<span class="pill '+(H.reachableEndings.length===H.endings.length?'ok':'warn')+'">엔딩 도달 <b>'+endTxt+'</b></span>'
+      + '<span class="pill '+(H.orphans.length?'bad':'ok')+'">고아 <b>'+H.orphans.length+'</b></span>'
+      + '<span class="pill '+(H.deadends.length?'bad':'ok')+'">막다른 <b>'+H.deadends.length+'</b></span>'
+      + '<span class="pill '+(H.brokenLinks.length?'bad':'ok')+'">끊긴 링크 <b>'+H.brokenLinks.length+'</b></span>';
+
+    function jump(id){ return '<a href="#scene-'+esc(id)+'">'+esc(id)+'</a>'; }
+    var problems = '';
+    if(H.brokenLinks.length) problems += '<div class="problem red">⛔ 끊긴 링크: '
+      + H.brokenLinks.map(function(b){ return jump(b.from)+' → <code>'+esc(b.to)+'</code>'; }).join(' · ')+'</div>';
+    if(H.orphans.length) problems += '<div class="problem">🟠 고아 씬(도달 불가): '
+      + H.orphans.map(jump).join(' · ')+'</div>';
+    if(H.deadends.length) problems += '<div class="problem">🔴 막다른 씬: '
+      + H.deadends.map(jump).join(' · ')+'</div>';
+    if(!problems) problems = '<div class="problem">✅ 끊긴 곳 없음. 모든 엔딩 도달 가능.</div>';
+
+    var flagsHTML = M.flags.map(function(f){
+      return '<span class="chip '+(f.kind==='flag'?'flag':'stat')+'">'+esc(f.name)
+        +' <span class="v">×'+f.setAt.length+'</span></span>';
+    }).join('') || '<span class="problem">아직 없음</span>';
+
+    var groupsHTML = M.groups.map(function(g){
+      return '<div class="group"><h2>'+esc(g.label)+'<span class="gcount">'+g.scenes.length+'개</span></h2>'
+        + '<div class="grid">'+g.scenes.map(cardHTML).join('')+'</div></div>';
+    }).join('');
+
+    app.innerHTML =
+        '<div class="toolbar">'
+      +   '<h1>배금도시 — 스토리 아틀라스</h1>'
+      +   '<div class="sub">같은 <code>data/scenes.js</code>를 읽어 항상 최신과 일치. 메모는 <code>atlas-notes.md</code>로 저장.</div>'
+      +   '<div class="pills">'+pills+'</div>'
+      +   '<div class="note-actions">'
+      +     '<button class="note-btn" id="noteOpen" type="button">노트 불러오기</button>'
+      +     '<button class="note-btn primary" id="noteSave" type="button">atlas-notes.md 저장</button>'
+      +     '<button class="note-btn" id="noteCopy" type="button">md 복사</button>'
+      +     '<span class="note-status" id="noteStatus">메모 0개</span>'
+      +   '</div>'
+      + '</div>'
+      + '<details open><summary>건강검진</summary><div class="pad">'+problems+'</div></details>'
+      + '<details><summary>플래그 · 스탯 색인 ('+M.flags.length+')</summary><div class="pad legend">'+flagsHTML+'</div></details>'
+      + groupsHTML
+      + '<footer>배금도시 V1 · 아틀라스</footer>';
+    bindNotes();
+  })();
+  </script>
+</body>
+</html>

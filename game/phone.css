@@ -1,0 +1,452 @@
+/* ===== 배금도시 — 스마트폰 연출 위젯 스타일 (재활용) =====
+   style.css 의 :root 변수(--gold/--red/--blue/--green 등)를 그대로 쓴다.
+   일러스트(.scene-img) 위에 작은 폰 화면을 오버레이로 띄운다. */
+
+.ph2-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 18px;
+  opacity: 0;
+  transform: translateY(18px) scale(0.96);
+  transition: opacity 0.72s ease, transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.ph2-overlay.ph2-show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.ph2-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(110% 85% at 50% 44%, transparent 24%, rgba(0, 0, 0, 0.58) 100%);
+  opacity: 0;
+  transition: opacity 0.72s ease;
+}
+
+.ph2-overlay.ph2-show::before {
+  opacity: 1;
+}
+
+.ph2-overlay.ph2-block {
+  pointer-events: auto;
+}
+
+.ph2-overlay.ph2-block.ph2-done {
+  pointer-events: none;
+}
+
+.scene-text.ph2-text-delayed,
+.scene-text.ph2-text-reveal {
+  transition: opacity 0.48s ease, transform 0.48s ease;
+}
+
+.scene-text.ph2-text-delayed {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.scene-text.ph2-text-reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- 폰 화면 ---------- */
+.ph2-device {
+  position: relative;
+  width: min(62%, 232px);
+  aspect-ratio: 9 / 19;
+  display: flex;
+  flex-direction: column;
+  border-radius: 30px;
+  padding: 9px 8px 7px;
+  background: linear-gradient(160deg, #2a2c31, #121316 60%, #0a0b0d);
+  border: 1.5px solid rgba(245, 239, 226, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.58),
+    0 26px 60px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.ph2-device-msg {
+  width: min(74%, 282px);
+}
+
+/* ---------- 상태바 ---------- */
+.ph2-status {
+  flex: 0 0 auto;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 9px 0 11px;
+  color: var(--paper);
+  font-size: 9px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.ph2-time { letter-spacing: 0.3px; }
+.ph2-icons { display: inline-flex; align-items: center; gap: 7px; }
+.ph2-net { font-size: 7.5px; opacity: 0.85; }
+.ph2-sig { display: inline-flex; align-items: flex-end; gap: 1px; height: 9px; }
+.ph2-sig i { width: 2px; background: var(--paper); border-radius: 1px; }
+.ph2-sig i:nth-child(1) { height: 3px; }
+.ph2-sig i:nth-child(2) { height: 5px; }
+.ph2-sig i:nth-child(3) { height: 7px; }
+.ph2-sig i:nth-child(4) { height: 9px; }
+.ph2-batt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 22px;
+  height: 10px;
+  padding: 1.5px;
+  border: 1px solid rgba(245, 239, 226, 0.6);
+  border-radius: 3px;
+}
+.ph2-batt::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5px;
+  height: 4px;
+  background: rgba(245, 239, 226, 0.6);
+  border-radius: 0 1px 1px 0;
+}
+.ph2-batt b { display: block; height: 100%; background: var(--paper); border-radius: 1px; }
+.ph2-batt-n {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6px;
+  font-weight: 900;
+  color: var(--coal);
+}
+
+/* ---------- 화면 본체 ---------- */
+.ph2-screen {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 5px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #14161a, #0c0d10);
+  transition: opacity 0.26s ease;
+}
+.ph2-screen.ph2-switching { opacity: 0; }
+
+.ph2-navbar {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 70px;
+  height: 3.5px;
+  margin: 6px 0 2px;
+  border-radius: 999px;
+  background: rgba(245, 239, 226, 0.5);
+}
+
+/* ===== 수신중 화면 ===== */
+.ph2-call {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 12px 16px;
+  text-align: center;
+  background:
+    radial-gradient(85% 45% at 50% 24%, rgba(216, 180, 93, 0.12), transparent 70%),
+    linear-gradient(180deg, #15171b, #0b0c0e);
+}
+.ph2-call-label {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.ph2-avatar {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  margin: 16px 0 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #3a3d44, #1c1e22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.ph2-avatar-txt { color: var(--paper); font-size: 24px; font-weight: 900; }
+.ph2-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(29, 176, 137, 0.7);
+  animation: ph2-pulse 1.8s ease-out infinite;
+}
+.ph2-ring2 { animation-delay: 0.9s; }
+@keyframes ph2-pulse {
+  0% { transform: scale(0.92); opacity: 0.8; }
+  100% { transform: scale(2); opacity: 0; }
+}
+.ph2-call-name {
+  color: var(--paper);
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.ph2-call-num {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ph2-call-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 150px;
+}
+.ph2-act {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+.ph2-ico-svg { width: 1.05em; height: 1.05em; fill: currentColor; display: block; }
+.ph2-decline { font-size: 18px; line-height: 1; }
+.ph2-decline { background: var(--red); }
+.ph2-accept {
+  background: var(--green);
+}
+
+/* 끊기는 순간(살짝 어둡게) */
+.ph2-device[data-state="ending"] .ph2-screen { filter: brightness(0.5) saturate(0.55); }
+
+/* ===== 부재중 목록(최근기록) 화면 ===== */
+.ph2-recents {
+  height: 100%;
+  padding: 14px 11px 12px;
+  background: linear-gradient(180deg, #1b1d21, #0f1013);
+  overflow: hidden;
+}
+.ph2-rec-head {
+  color: var(--paper);
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.ph2-rec-tab {
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(245, 239, 226, 0.12);
+  margin-bottom: 8px;
+}
+.ph2-rec-list { display: flex; flex-direction: column; gap: 2px; }
+.ph2-rec-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border-bottom: 1px solid rgba(245, 239, 226, 0.06);
+}
+.ph2-rec-row.ph2-rec-new {
+  background: rgba(224, 72, 60, 0.12);
+  border-bottom-color: transparent;
+  animation: ph2-rec-in 0.5s ease both;
+}
+@keyframes ph2-rec-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ph2-rec-ico {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+  background: var(--red);
+}
+.ph2-rec-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ph2-rec-name {
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ph2-rec-name em { color: var(--red); font-style: normal; font-weight: 900; }
+.ph2-rec-sub { color: var(--red); font-size: 9px; font-weight: 700; }
+.ph2-rec-time {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 메시지 화면 ===== */
+.ph2-messages {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #eef0f3, #d9dde2);
+  color: #111418;
+}
+
+.ph2-msg-head {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 7px 10px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(247, 248, 250, 0.94);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ph2-msg-back {
+  color: #1476ff;
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.ph2-msg-contact {
+  display: flex;
+  flex-direction: column;
+  color: #111418;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.ph2-msg-contact small {
+  color: #7b828c;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.ph2-msg-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px 9px 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.ph2-msg-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 86%;
+  gap: 2px;
+}
+
+.ph2-msg-row.ph2-msg-me {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.ph2-msg-row.ph2-msg-them {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.ph2-msg-name {
+  padding: 0 3px;
+  color: #7b828c;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.ph2-msg-bubble {
+  padding: 7px 9px;
+  border-radius: 13px;
+  white-space: pre-line;
+  word-break: keep-all;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.35;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.ph2-msg-them .ph2-msg-bubble {
+  background: #ffffff;
+  color: #121417;
+  border-bottom-left-radius: 4px;
+}
+
+.ph2-msg-me .ph2-msg-bubble {
+  background: #1d8bff;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.ph2-msg-choices {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 8px 9px;
+  background: rgba(247, 248, 250, 0.96);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ph2-msg-choice {
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid rgba(20, 118, 255, 0.26);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1264d8;
+  text-align: left;
+  font-size: 9.7px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.ph2-msg-choice:active {
+  background: #e6f0ff;
+}
+
+@media (max-width: 360px) {
+  .ph2-device { width: min(70%, 210px); }
+  .ph2-device-msg { width: min(82%, 246px); }
+  .ph2-msg-bubble { font-size: 10px; }
+  .ph2-msg-choice { font-size: 9px; }
+}

@@ -1,0 +1,10 @@
+.playwright-mcp/
+node_modules/
+dist/
+build/
+.env
+.env.*
+*.log
+*.tmp
+game/preview-atlas*.png
+game/preview-atlas-notes.png

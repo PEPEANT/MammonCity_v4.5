@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>배금도시</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="phone.css" />
+</head>
+<body>
+  <!-- 게임은 이 한 칸 안에서 다 그려진다 (세로 폰 화면) -->
+  <div id="app">
+    <!-- 상단 챕터/주차 헤더 -->
+    <header id="hdr" class="hdr"></header>
+
+    <!-- 화면 본체: 엔진이 여기에 씬을 그린다 -->
+    <main id="stage"></main>
+
+    <!-- 무료 버전 광고 자리 (지금은 비활성, 출시 때 결정) -->
+    <div id="adslot" class="adslot" hidden>광고 자리</div>
+  </div>
+
+  <!-- 스토리 데이터 먼저, 그 다음 엔진 -->
+  <script src="data/scenes.js"></script>
+  <script src="phone.js"></script>
+  <script src="engine.js"></script>
+</body>
+</html>
