@@ -31,6 +31,19 @@
   .note-status{font-size:12px; color:var(--muted)}
   .note-status.ok{color:var(--green)}
   .note-status.warn{color:var(--gold)}
+  .preview-dock{position:fixed; right:18px; bottom:18px; z-index:40; width:min(430px, calc(100vw - 36px));
+    height:min(760px, calc(100dvh - 36px)); border:1px solid rgba(216,180,93,.42); border-radius:12px;
+    background:#090a0d; box-shadow:0 28px 80px rgba(0,0,0,.72); display:none; flex-direction:column; overflow:hidden}
+  .preview-dock.open{display:flex}
+  .preview-head{flex:0 0 auto; min-height:42px; display:flex; align-items:center; gap:8px; padding:8px 10px;
+    background:#15171b; border-bottom:1px solid var(--line)}
+  .preview-name{min-width:0; flex:1 1 auto; color:var(--gold); font:800 12px ui-monospace,Menlo,Consolas,monospace;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .preview-tool{border:1px solid var(--line); background:#22252b; color:var(--ink); border-radius:6px;
+    padding:5px 8px; font-size:12px; font-weight:800; text-decoration:none}
+  .preview-tool:hover{border-color:var(--gold)}
+  .preview-frame-wrap{flex:1 1 auto; min-height:0; background:#050506}
+  .preview-frame{width:100%; height:100%; border:0; display:block; background:#050506}
 
   details{margin-bottom:14px; border:1px solid var(--line); border-radius:10px; background:var(--panel); overflow:hidden}
   summary{cursor:pointer; padding:10px 14px; font-weight:800; font-size:14px; list-style:none}
@@ -58,6 +71,9 @@
 
   .id{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; font-weight:800; color:var(--gold)}
   .type{font-size:11px; color:var(--muted); margin-left:6px}
+  .preview-btn{margin-left:7px; border:1px solid rgba(216,180,93,.45); background:rgba(216,180,93,.12);
+    color:var(--gold); border-radius:6px; padding:2px 6px; font-size:10px; font-weight:800; vertical-align:1px}
+  .preview-btn:hover{background:rgba(216,180,93,.22)}
   .badges{float:right; display:flex; gap:4px}
   .bdg{font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px; border:1px solid var(--line); color:var(--muted)}
   .bdg.start{color:var(--green); border-color:var(--green)}
@@ -100,6 +116,9 @@
   .empty{color:var(--muted); padding:40px; text-align:center}
   code{font-family:ui-monospace,Menlo,Consolas,monospace}
   footer{color:var(--muted); font-size:12px; margin:30px 0 10px; text-align:center}
+  @media (max-width:720px){
+    .preview-dock{inset:10px; width:auto; height:auto}
+  }
 </style>
 </head>
 <body>
@@ -172,6 +191,7 @@
       return '<div class="'+cls+'" id="scene-'+esc(s.id)+'">'
         + '<div class="badges">'+s.badges.map(badgeHTML).join('')+'</div>'
         + '<span class="id">'+esc(s.id)+'</span><span class="type">'+esc(s.type)+'</span>'
+        + '<button class="preview-btn" type="button" data-preview-scene="'+esc(s.id)+'">미리보기</button>'
         + (s.header?'<div class="hd">'+esc(s.header)+'</div>':'')
         + imageHTML(s.image)
         + (s.speaker?'<div class="sp">'+esc(s.speaker)+'</div>':'')
@@ -355,6 +375,42 @@
       updateNoteCount();
     }
 
+    function previewURL(id){
+      return 'index.html?preview=' + encodeURIComponent(id) + '&embed=1';
+    }
+
+    function openPreview(id){
+      var dock = document.getElementById('previewDock');
+      var frame = document.getElementById('previewFrame');
+      var name = document.getElementById('previewName');
+      var pop = document.getElementById('previewPopout');
+      if(!dock || !frame || !name || !pop) return;
+      var url = previewURL(id);
+      name.textContent = id;
+      pop.href = url;
+      frame.src = url;
+      dock.classList.add('open');
+      document.body.classList.add('preview-open');
+    }
+
+    function closePreview(){
+      var dock = document.getElementById('previewDock');
+      var frame = document.getElementById('previewFrame');
+      if(frame) frame.src = 'about:blank';
+      if(dock) dock.classList.remove('open');
+      document.body.classList.remove('preview-open');
+    }
+
+    function bindPreview(){
+      app.addEventListener('click', function(e){
+        var btn = e.target && e.target.closest('[data-preview-scene]');
+        if(!btn) return;
+        openPreview(btn.getAttribute('data-preview-scene'));
+      });
+      var close = document.getElementById('previewClose');
+      if(close) close.addEventListener('click', closePreview);
+    }
+
     // ----- 헤더 / 건강검진 -----
     var endTxt = H.reachableEndings.length + '/' + H.endings.length;
     var pills = ''
@@ -396,11 +452,20 @@
       +     '<span class="note-status" id="noteStatus">메모 0개</span>'
       +   '</div>'
       + '</div>'
+      + '<section class="preview-dock" id="previewDock" aria-label="씬 미리보기">'
+      +   '<div class="preview-head">'
+      +     '<div class="preview-name" id="previewName">preview</div>'
+      +     '<a class="preview-tool" id="previewPopout" href="index.html" target="_blank" rel="noopener">새 탭</a>'
+      +     '<button class="preview-tool" id="previewClose" type="button">닫기</button>'
+      +   '</div>'
+      +   '<div class="preview-frame-wrap"><iframe class="preview-frame" id="previewFrame" title="씬 미리보기"></iframe></div>'
+      + '</section>'
       + '<details open><summary>건강검진</summary><div class="pad">'+problems+'</div></details>'
       + '<details><summary>플래그 · 스탯 색인 ('+M.flags.length+')</summary><div class="pad legend">'+flagsHTML+'</div></details>'
       + groupsHTML
       + '<footer>배금도시 V1 · 아틀라스</footer>';
     bindNotes();
+    bindPreview();
   })();
   </script>
 </body>

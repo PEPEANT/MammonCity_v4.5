@@ -11,6 +11,9 @@
      unlocked  : [앨범에 해금된 그림 id]
 ============================================================ */
 
+const ENGINE_PARAMS = new URLSearchParams(window.location.search);
+const PREVIEW_SCENE = ENGINE_PARAMS.get('preview') || '';
+const PREVIEW_MODE = !!PREVIEW_SCENE;
 const SAVE_VERSION = 2;
 const SAVE_KEY = 'baegeumdosi_save_v2';
 const LEGACY_SAVE_KEY = 'baegeumdosi_save_v1';
@@ -24,9 +27,14 @@ const els = {
   stage: document.getElementById('stage'),
 };
 
+if (PREVIEW_MODE) {
+  document.documentElement.classList.add('preview-mode');
+  document.body.classList.add('preview-mode');
+}
+
 els.stage.addEventListener('phone:action', handlePhoneAction);
 
-let state = newGame();
+let state = initialState();
 
 function newGame() {
   return {
@@ -50,6 +58,43 @@ function newGame() {
       leaderboardScore: STARTING_CASH,
     },
   };
+}
+
+function initialState() {
+  const next = newGame();
+  if (!PREVIEW_MODE) return next;
+
+  next.player.name = ENGINE_PARAMS.get('name') || '김특붕';
+  next.progress.scene = PREVIEW_SCENE;
+  applyPreviewOverrides(next);
+  next.progress.scene = remapSceneId(next.progress.scene, next);
+
+  const sc = story.scenes[next.progress.scene];
+  if (sc && typeof sc.week === 'number') next.progress.week = sc.week;
+  return next;
+}
+
+function applyPreviewOverrides(target) {
+  const anger = ENGINE_PARAMS.get('anger');
+  if (anger != null) target.meters.anger = clampAnger(anger);
+
+  const cash = ENGINE_PARAMS.get('cash');
+  if (cash != null && !Number.isNaN(Number(cash))) target.economy.cash = Number(cash);
+
+  const appearance = ENGINE_PARAMS.get('appearance');
+  if (appearance) target.flags.appearance = appearance;
+
+  ENGINE_PARAMS.forEach((value, key) => {
+    if (key.startsWith('flag.')) target.flags[key.slice(5)] = parsePreviewValue(value);
+    if (key.startsWith('affection.')) target.affection[key.slice(10)] = Number(value) || 0;
+  });
+}
+
+function parsePreviewValue(value) {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (value !== '' && !Number.isNaN(Number(value))) return Number(value);
+  return value;
 }
 
 function normalizeState(raw) {
@@ -162,24 +207,28 @@ function escapeHTML(value) {
 
 /* ---------- 저장/불러오기 ---------- */
 function save() {
+  if (PREVIEW_MODE) return;
   try {
     updateRecords();
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch (e) {}
 }
 function clearSave() {
+  if (PREVIEW_MODE) return;
   try {
     localStorage.removeItem(SAVE_KEY);
     localStorage.removeItem(LEGACY_SAVE_KEY);
   } catch (e) {}
 }
 function loadSave() {
+  if (PREVIEW_MODE) return null;
   try {
     const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
     return raw ? normalizeState(JSON.parse(raw)) : null;
   } catch (e) { return null; }
 }
 function hasSave() {
+  if (PREVIEW_MODE) return false;
   const s = loadSave();
   return !!(s && s.progress && s.progress.scene && s.progress.scene !== story.start);
 }
@@ -271,7 +320,7 @@ function renderHeader(sc) {
     <span class="hdr-stats">
       <span class="money-stat">돈 ${formatCompactMoney(state.economy.cash)}</span>
       ${angerGaugeHTML()}
-      <button class="map-btn" data-act="map">세이브</button>
+      <button class="map-btn" data-act="map">${PREVIEW_MODE ? '지도' : '세이브'}</button>
     </span>`;
 }
 

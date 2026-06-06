@@ -54,6 +54,16 @@ button {
   box-shadow: 0 0 70px rgba(0, 0, 0, 0.72);
 }
 
+.preview-mode body,
+body.preview-mode {
+  background: #050506;
+}
+
+body.preview-mode #app {
+  max-width: none;
+  box-shadow: none;
+}
+
 .hdr {
   flex: 0 0 auto;
   min-height: 44px;
