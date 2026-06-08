@@ -962,6 +962,17 @@ body.preview-mode #app {
   transition: all 0.15s ease;
 }
 
+.map-node-btn {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.map-node-btn:active {
+  transform: translateY(1px);
+  filter: brightness(1.12);
+}
+
 /* 지나온 칸 */
 .map-node.done {
   color: rgba(245, 239, 226, 0.62);

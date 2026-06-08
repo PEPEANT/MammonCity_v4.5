@@ -21,6 +21,13 @@ const STARTING_CASH = 300000;
 const MAX_ANGER = 5;
 const MAX_HISTORY = 50;
 const STOCK_PHONE_SCREENS = new Set(['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult']);
+const ENDING_SCENE_CHAINS = {
+  e_dirt: ['ed_dirt_room', 'ed_dirt_phone', 'e_dirt'],
+  e_han: ['ed_han_still', 'ed_han_phone', 'e_han'],
+  e_ruin: ['ed_ruin_phone', 'e_ruin'],
+  e_silver: ['ed_silver_gukbap', 'ed_silver_phone', 'e_silver'],
+  e_gold: ['ed_gold_rich', 'ed_gold_phone', 'e_gold'],
+};
 const story = window.STORY;
 
 const els = {
@@ -54,6 +61,7 @@ function newGame() {
     flags: {},
     unlocked: [],
     history: [],
+    branchSaves: {},
     records: {
       bestCash: STARTING_CASH,
       bestNetWorth: STARTING_CASH,
@@ -113,6 +121,7 @@ function normalizeState(raw) {
     next.flags = { ...(raw.flags || {}) };
     next.unlocked = Array.isArray(raw.unlocked) ? [...raw.unlocked] : [];
     next.history = Array.isArray(raw.history) ? raw.history.slice(-MAX_HISTORY) : [];
+    next.branchSaves = normalizeBranchSaves(raw.branchSaves);
     next.records = { ...next.records, ...(raw.records || {}) };
     next.progress.scene = remapSceneId(next.progress.scene, next);
     return next;
@@ -123,6 +132,7 @@ function normalizeState(raw) {
   next.progress.week = Number(raw.week || 0);
   next.affection = { ...(raw.affection || {}) };
   next.unlocked = Array.isArray(raw.unlocked) ? [...raw.unlocked] : [];
+  next.branchSaves = normalizeBranchSaves(raw.branchSaves);
   next.progress.scene = remapSceneId(next.progress.scene, next);
   updateRecords(next);
   return next;
@@ -151,6 +161,7 @@ function remapSceneId(id, target = state) {
   if (id === 'w3_open') return metYumina ? 'w3_date_meet' : 'w3_market_arrival';
   if (id === 'w4a_after') return metYumina ? 'w4a_borrow_hesitate' : 'w4a_alone';
   if (id === 'w4b_after') return metYumina ? 'w4b_yumina' : 'w4b_alone';
+  if (id === 'w5b_choice') return metYumina ? 'w5b_choice_y' : 'w5b_choice_n';
 
   // 3주차 첫날: 어떤 종목을 샀는지로 결과 화면 분기 (손실 종목은 내러티브로 — 앱 상승화면 회피)
   if (id === 'w3_stock_result') {
@@ -232,6 +243,7 @@ function save() {
   if (PREVIEW_MODE) return;
   try {
     updateRecords();
+    captureBranchSave();
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch (e) {}
 }
@@ -253,6 +265,62 @@ function hasSave() {
   if (PREVIEW_MODE) return false;
   const s = loadSave();
   return !!(s && s.progress && s.progress.scene && s.progress.scene !== story.start);
+}
+
+function normalizeBranchSaves(raw) {
+  if (!raw || typeof raw !== 'object') return {};
+  const out = {};
+  for (const scene in raw) {
+    const item = raw[scene];
+    if (!item || typeof item !== 'object' || !item.snapshot) continue;
+    out[scene] = {
+      scene: item.scene || scene,
+      label: item.label || scene,
+      week: Number(item.week || 0),
+      branch: item.branch || '',
+      ending: item.ending || '',
+      at: Number(item.at || 0),
+      snapshot: item.snapshot,
+    };
+  }
+  return out;
+}
+
+function restoreSnapshotData(sceneId = currentScene()) {
+  return {
+    version: SAVE_VERSION,
+    player: { ...state.player },
+    progress: { ...state.progress, scene: sceneId },
+    economy: { ...state.economy },
+    meters: { ...state.meters },
+    affection: { ...state.affection },
+    flags: { ...state.flags },
+    unlocked: Array.isArray(state.unlocked) ? [...state.unlocked] : [],
+    records: { ...state.records },
+  };
+}
+
+function endingForScene(sceneId) {
+  for (const ending in ENDING_SCENE_CHAINS) {
+    if (ENDING_SCENE_CHAINS[ending].includes(sceneId)) return ending;
+  }
+  return '';
+}
+
+function captureBranchSave(sceneId = currentScene()) {
+  const sc = story.scenes[sceneId];
+  if (!sc) return;
+  state.branchSaves = state.branchSaves || {};
+  const snapshot = restoreSnapshotData(sceneId);
+  state.branchSaves[sceneId] = {
+    scene: sceneId,
+    label: sc.header || sc.big || sceneId,
+    week: Number(snapshot.progress.week || 0),
+    branch: snapshot.flags.branch || '',
+    ending: endingForScene(sceneId),
+    at: Date.now(),
+    snapshot,
+  };
 }
 
 /* ---------- 텍스트 치환: {이름} -> 플레이어 이름 ---------- */
@@ -724,19 +792,101 @@ function renderAlbum() {
 }
 
 /* --- 분기맵 (이름 정한 직후 + 세이브 버튼) --- */
-function buildMapHTML() {
+function reachedSceneSet() {
+  const reached = new Set([currentScene()]);
+  (state.history || []).forEach(item => {
+    if (item.from) reached.add(item.from);
+    if (item.next) reached.add(item.next);
+  });
+  Object.keys(state.branchSaves || {}).forEach(scene => reached.add(scene));
+  return reached;
+}
+
+function latestSavedScene(scenes) {
+  let best = null;
+  const saves = state.branchSaves || {};
+  scenes.forEach(scene => {
+    const item = saves[scene];
+    if (item && (!best || Number(item.at || 0) >= Number(best.at || 0))) best = item;
+  });
+  return best && best.scene;
+}
+
+function latestReachedScene(scenes, reached) {
+  for (let i = scenes.length - 1; i >= 0; i -= 1) {
+    if (reached.has(scenes[i])) return scenes[i];
+  }
+  return '';
+}
+
+function nodeCheckpointScene(node, reached) {
+  if (node.ending) {
+    const chain = ENDING_SCENE_CHAINS[node.ending] || [node.ending];
+    return latestSavedScene(chain) || latestReachedScene(chain, reached);
+  }
+
+  const saves = Object.values(state.branchSaves || {})
+    .filter(item => Number(item.week || 0) === Number(node.week || 0))
+    .filter(item => !node.branch || item.branch === node.branch)
+    .filter(item => !item.ending)
+    .sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+  if (saves.length) return saves[0].scene;
+
+  if (node.checkpoint && Number(node.week || 0) <= Number(state.progress.week || 0)) {
+    return remapSceneId(node.checkpoint, state);
+  }
+
+  return '';
+}
+
+function isCurrentEnding(node) {
+  if (!node.ending) return false;
+  const chain = ENDING_SCENE_CHAINS[node.ending] || [node.ending];
+  return chain.includes(currentScene());
+}
+
+function restoreMapCheckpoint(sceneId) {
+  sceneId = remapSceneId(sceneId, state);
+  if (!sceneId || !story.scenes[sceneId]) return;
+  const keepBranchSaves = { ...(state.branchSaves || {}) };
+  const keepHistory = Array.isArray(state.history) ? [...state.history] : [];
+  const checkpoint = keepBranchSaves[sceneId];
+
+  if (checkpoint && checkpoint.snapshot) {
+    state = normalizeState(checkpoint.snapshot);
+    state.branchSaves = keepBranchSaves;
+    state.history = keepHistory;
+  } else {
+    state.progress.scene = sceneId;
+    const sc = story.scenes[sceneId];
+    if (sc && typeof sc.week === 'number') state.progress.week = sc.week;
+  }
+
+  save();
+  render();
+}
+
+function bindMapCheckpointButtons() {
+  els.stage.querySelectorAll('[data-map-scene]').forEach(btn => {
+    btn.onclick = () => restoreMapCheckpoint(btn.dataset.mapScene);
+  });
+}
+
+function buildMapHTML(interactive = false) {
   const map = story.branchMap;
   if (!map || !Array.isArray(map.rows)) return '<div class="map-empty">분기 정보 없음</div>';
 
   const curWeek = Number(state.progress.week || 0);
   const branch = state.flags.branch;
   const curScene = currentScene();
+  const reached = reachedSceneSet();
 
   const rows = map.rows.map(row => {
     const cells = row.map(node => {
       let cls;
+      const targetScene = interactive ? nodeCheckpointScene(node, reached) : '';
       if (node.ending) {
-        cls = (curScene === node.ending) ? 'current' : 'locked';
+        cls = isCurrentEnding(node) ? 'current' : (targetScene ? 'done' : 'locked');
       } else if (node.branch && branch && node.branch !== branch) {
         cls = 'locked off';                       // 안 고른 분기
       } else if (node.week < curWeek) {
@@ -749,7 +899,11 @@ function buildMapHTML() {
       // 숨겨진 진엔딩은 도달 전까지 ??? 로 가린다
       const reveal = (cls === 'current') || (cls === 'done');
       const label = (node.secret && !reveal) ? '???' : node.label;
-      return `<div class="map-node ${cls}${node.secret ? ' secret' : ''}">${escapeHTML(label)}</div>`;
+      const className = `map-node ${cls}${node.secret ? ' secret' : ''}`;
+      if (interactive && targetScene && (cls === 'current' || cls === 'done')) {
+        return `<button type="button" class="${className} map-node-btn" data-map-scene="${escapeHTML(targetScene)}">${escapeHTML(label)}</button>`;
+      }
+      return `<div class="${className}">${escapeHTML(label)}</div>`;
     }).join('');
     return `<div class="map-row">${cells}</div>`;
   }).join('');
@@ -772,8 +926,9 @@ function renderMap(sc) {
 // 세이브 버튼에서 여는 오버레이 (현재 씬은 그대로, 돌아가기로 복귀)
 function openMapOverlay() {
   els.hdr.textContent = '진행 분기 · 저장됨';
-  els.stage.innerHTML = `<div class="map-screen">${buildMapHTML()}`
+  els.stage.innerHTML = `<div class="map-screen">${buildMapHTML(true)}`
     + `<button class="back-btn" id="mapBack">← 돌아가기</button></div>`;
+  bindMapCheckpointButtons();
   document.getElementById('mapBack').onclick = () => render();
 }
 

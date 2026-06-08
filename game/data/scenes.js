@@ -43,6 +43,8 @@ window.STORY = {
       [ { label: '3주차', week: 3 } ],
       [ { label: '4주차 · 붕괴', week: 4, branch: 'A' },
         { label: '4주차 · 생존', week: 4, branch: 'B' } ],
+      [ { label: '5주차 · 바닥',   week: 5, branch: 'A', checkpoint: 'w5a_choice' },
+        { label: '5주차 · 갈림길', week: 5, branch: 'B', checkpoint: 'w5b_choice' } ],
       [ { label: '흙수저',     week: 5, branch: 'A', ending: 'e_dirt' },
         { label: '한강',       week: 5, branch: 'A', ending: 'e_han' },
         { label: '파멸',       week: 5, branch: 'A', ending: 'e_ruin' },
