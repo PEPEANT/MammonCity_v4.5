@@ -199,6 +199,85 @@ window.PhoneWidget = (function () {
       </div>`;
   }
 
+  function priceOnly(v) {
+    return Math.round(Number(v || 0)).toLocaleString('ko-KR');
+  }
+
+  function stockChartHTML(s) {
+    const price = Math.max(1, Number(s.buyPrice || 72000));
+    const closePath = [
+      0.585, 0.575, 0.592, 0.579, 0.587, 0.574, 0.596, 0.583,
+      0.602, 0.594, 0.611, 0.604, 0.623, 0.631, 0.641, 0.653,
+      0.667, 0.692, 0.729, 0.792, 0.842, 0.884, 0.927, 0.968,
+      0.994, 1.0, 1.0, 1.0,
+    ];
+    const candles = closePath.map((close, i) => {
+      const prev = i ? closePath[i - 1] : close - 0.012;
+      const open = i % 4 === 0 ? close + 0.01 : prev;
+      const wick = i > 18 ? 0.035 : 0.018 + (i % 3) * 0.006;
+      return {
+        open: open * price,
+        close: close * price,
+        high: (Math.max(open, close) + wick) * price,
+        low: (Math.min(open, close) - wick * 0.72) * price,
+      };
+    });
+
+    const w = 300;
+    const h = 420;
+    const padL = 4;
+    const padR = 58;
+    const padT = 13;
+    const padB = 34;
+    const plotW = w - padL - padR;
+    const plotH = h - padT - padB;
+    const hi = Math.max(price * 1.075, ...candles.map(c => c.high));
+    const lo = Math.min(price * 0.55, ...candles.map(c => c.low));
+    const y = value => padT + ((hi - value) / (hi - lo)) * plotH;
+    const step = plotW / candles.length;
+    const candleW = Math.max(3, step * 0.52);
+    const ticks = [price, price * 0.916, price * 0.799, price * 0.683, price * 0.567];
+
+    const grid = ticks.map(value => {
+      const yy = y(value).toFixed(1);
+      return `
+        <line class="ph2-chart-grid" x1="${padL}" y1="${yy}" x2="${padL + plotW}" y2="${yy}" />
+        <text class="ph2-chart-axis" x="${padL + plotW + 8}" y="${Number(yy) + 3}">${priceOnly(value)}</text>`;
+    }).join('');
+
+    const bars = candles.map((c, i) => {
+      const x = padL + step * i + step / 2;
+      const up = c.close >= c.open;
+      const cls = up ? 'up' : 'down';
+      const highY = y(c.high);
+      const lowY = y(c.low);
+      const openY = y(c.open);
+      const closeY = y(c.close);
+      const top = Math.min(openY, closeY);
+      const height = Math.max(2, Math.abs(closeY - openY));
+      return `
+        <line class="ph2-candle-wick ${cls}" x1="${x.toFixed(1)}" y1="${highY.toFixed(1)}" x2="${x.toFixed(1)}" y2="${lowY.toFixed(1)}" />
+        <rect class="ph2-candle-body ${cls}" x="${(x - candleW / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${candleW.toFixed(1)}" height="${height.toFixed(1)}" />`;
+    }).join('');
+
+    const lineY = y(price).toFixed(1);
+    const volumeY = h - 21;
+    const buyW = plotW * 0.9;
+
+    return `
+      <svg class="ph2-chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(s.symbol)} 상승 차트">
+        ${grid}
+        ${bars}
+        <line class="ph2-chart-current" x1="${padL}" y1="${lineY}" x2="${padL + plotW}" y2="${lineY}" />
+        <rect class="ph2-chart-price-tag" x="${padL + plotW + 4}" y="${Number(lineY) - 9}" width="48" height="18" rx="2" />
+        <text class="ph2-chart-price-text" x="${padL + plotW + 8}" y="${Number(lineY) + 4}">${priceOnly(price)}</text>
+        <rect class="ph2-volume-buy" x="${padL}" y="${volumeY}" width="${buyW.toFixed(1)}" height="4" rx="1" />
+        <rect class="ph2-volume-sell" x="${(padL + buyW).toFixed(1)}" y="${volumeY}" width="${(plotW - buyW).toFixed(1)}" height="4" rx="1" />
+        <text class="ph2-volume-label buy" x="${padL}" y="${volumeY + 14}">매수</text>
+        <text class="ph2-volume-label sell" x="${padL + plotW}" y="${volumeY + 14}">매도</text>
+      </svg>`;
+  }
+
   function screenMarket(cfg, state) {
     const s = stockView(cfg, state);
     return `
@@ -208,17 +287,13 @@ window.PhoneWidget = (function () {
           <div class="ph2-stock-name">${esc(s.symbol)} <span>${esc(s.code)}</span></div>
           <div class="ph2-stock-row">
             <div class="ph2-stock-price">${money(s.buyPrice).replace('원', '')}</div>
-            <div class="ph2-stock-change">▲ +18.42%</div>
+            <div class="ph2-stock-change">▲ +61.54%</div>
           </div>
           <div class="ph2-stock-sub">거래량 증가</div>
         </div>
         <div class="ph2-chart">
           <span class="ph2-live">LIVE</span>
-          <div class="ph2-candles">${Array.from({ length: 18 }, (_, i) => {
-            const h = 22 + (i % 5) * 8 + (i > 10 ? 18 : 0);
-            return `<i class="${i % 4 === 0 ? 'down' : 'up'}" style="height:${h}px"></i>`;
-          }).join('')}</div>
-          <div class="ph2-rsi"><b>RSI(14)</b><span></span></div>
+          ${stockChartHTML(s)}
         </div>
         <div class="ph2-stock-hold">
           <span>보유 <b>0주</b></span>

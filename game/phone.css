@@ -573,68 +573,99 @@
 .ph2-chart {
   position: relative;
   flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 16px 12px 0;
-  background: #ffffff;
+  min-height: 188px;
+  display: block;
+  padding: 0;
+  background: #111318;
+  border-top: 1px solid #171a20;
+  border-bottom: 1px solid #171a20;
+  overflow: hidden;
 }
 
 .ph2-live {
   position: absolute;
   top: 8px;
   right: 12px;
+  z-index: 1;
   color: var(--red);
   font-size: 8px;
   font-weight: 900;
 }
 
-.ph2-candles {
-  flex: 1 1 auto;
-  min-height: 94px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 4px;
-  border-bottom: 1px solid #eceef2;
-  padding: 16px 0 10px;
+.ph2-chart-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.ph2-candles i {
-  width: 8px;
-  min-height: 16px;
-  border-radius: 2px;
-  background: var(--red);
+.ph2-chart-grid {
+  stroke: #22262d;
+  stroke-width: 1;
 }
 
-.ph2-candles i.down {
-  background: var(--blue);
+.ph2-chart-axis {
+  fill: #69717b;
+  font-size: 8px;
+  font-weight: 800;
 }
 
-.ph2-rsi {
-  flex: 0 0 54px;
-  position: relative;
-  border-bottom: 1px solid #eceef2;
+.ph2-candle-wick {
+  stroke-width: 1.15;
+  vector-effect: non-scaling-stroke;
 }
 
-.ph2-rsi b {
-  position: absolute;
-  top: 6px;
-  left: 0;
-  color: #7a5af8;
+.ph2-candle-body {
+  rx: 0.8px;
+}
+
+.ph2-candle-wick.up,
+.ph2-candle-body.up {
+  stroke: #e34235;
+  fill: #e34235;
+}
+
+.ph2-candle-wick.down,
+.ph2-candle-body.down {
+  stroke: #2d73dc;
+  fill: #2d73dc;
+}
+
+.ph2-chart-current {
+  stroke: #d1aa4e;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.ph2-chart-price-tag {
+  fill: #e6bd5b;
+}
+
+.ph2-chart-price-text {
+  fill: #18140a;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-volume-buy {
+  fill: #d42f31;
+}
+
+.ph2-volume-sell {
+  fill: #2d73dc;
+}
+
+.ph2-volume-label {
   font-size: 8px;
   font-weight: 900;
 }
 
-.ph2-rsi span {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #7a5af8 18%, #7a5af8 78%, transparent);
-  transform: skewY(-9deg);
+.ph2-volume-label.buy {
+  fill: #e34235;
+}
+
+.ph2-volume-label.sell {
+  fill: #2d73dc;
+  text-anchor: end;
 }
 
 .ph2-stock-hold {
