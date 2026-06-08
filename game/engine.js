@@ -20,6 +20,7 @@ const LEGACY_SAVE_KEY = 'baegeumdosi_save_v1';
 const STARTING_CASH = 300000;
 const MAX_ANGER = 5;
 const MAX_HISTORY = 50;
+const STOCK_PHONE_SCREENS = new Set(['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult']);
 const story = window.STORY;
 
 const els = {
@@ -287,8 +288,9 @@ function cssVar(name, value) {
 function imageBlock(img) {
   // img 가 문자열이면 실제 파일 경로, 객체면 {placeholder:'설명'} 또는 레이어 이미지.
   if (typeof img === 'string') {
-    return `<div class="scene-img has-art" style="--scene-art:url('${escapeHTML(img)}')">
+    return `<div class="scene-img has-art is-loading" style="--scene-art:url('${escapeHTML(img)}')">
       <img src="${escapeHTML(img)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + img)}">
+      <div class="scene-loader" aria-hidden="true"></div>
     </div>`;
   }
   if (isLayeredImage(img)) {
@@ -312,9 +314,10 @@ function imageBlock(img) {
       ? `<img class="scene-character" src="${escapeHTML(character)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + character)}">`
       : '';
 
-    return `<div class="${classes.join(' ')}" style="${style}" data-character-delay="${escapeHTML(delay)}">
+    return `<div class="${classes.join(' ')} is-loading" style="${style}" data-character-delay="${escapeHTML(delay)}">
       <img class="scene-bg" src="${escapeHTML(img.background)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + img.background)}">
       ${characterHTML}
+      <div class="scene-loader" aria-hidden="true"></div>
     </div>`;
   }
   if (img && img.placeholder) {
@@ -325,8 +328,46 @@ function imageBlock(img) {
 function bindImageFallbacks() {
   els.stage.querySelectorAll('img[data-missing]').forEach(img => {
     img.onerror = () => {
+      const wrap = img.closest('.scene-img');
       img.parentNode.innerHTML = phHTML(img.dataset.missing || '이미지 없음');
+      if (wrap) wrap.classList.remove('is-loading');
     };
+  });
+  // 메인 이미지가 실제로 도착하면 로딩 스피너를 끄고 부드럽게 페이드인.
+  els.stage.querySelectorAll('.scene-img.is-loading').forEach(wrap => {
+    const main = wrap.querySelector('.scene-bg') || wrap.querySelector('img');
+    if (!main) { wrap.classList.remove('is-loading'); return; }
+    const done = () => wrap.classList.remove('is-loading');
+    if (main.complete && main.naturalWidth > 0) done();       // 이미 캐시됨(프리로드 덕분)
+    else main.addEventListener('load', done, { once: true });
+  });
+}
+
+/* ---------- 이미지 사전 로딩: 다음에 갈 씬 그림을 미리 받아둔다 ---------- */
+const preloadCache = new Map();
+function preloadImage(url) {
+  if (!url || preloadCache.has(url)) return;
+  const im = new Image();
+  im.src = url;
+  preloadCache.set(url, im);
+}
+function sceneImageUrls(sc) {
+  const img = sc && sc.image;
+  if (typeof img === 'string') return [img];
+  if (img && typeof img === 'object') return [img.background, img.character].filter(Boolean);
+  return [];
+}
+function preloadUpcoming(sc) {
+  if (!sc) return;
+  const ids = new Set();
+  if (sc.next) ids.add(sc.next);
+  [
+    ...(Array.isArray(sc.choices) ? sc.choices : []),
+    ...((sc.phone && Array.isArray(sc.phone.choices)) ? sc.phone.choices : []),
+  ].forEach(ch => { if (ch && ch.next) ids.add(ch.next); });
+  ids.forEach(id => {
+    const target = story.scenes[remapSceneId(id, state)];
+    if (target) sceneImageUrls(target).forEach(preloadImage);
   });
 }
 function phHTML(label) {
@@ -357,6 +398,7 @@ function render() {
   }[type] || renderScene)(sc);
 
   bindImageFallbacks();
+  preloadUpcoming(sc);
   if (window.PhoneWidget) PhoneWidget.bind(els.stage, sc, state);
 
   const mapBtn = els.hdr.querySelector('[data-act="map"]');
@@ -480,7 +522,7 @@ function renderScene(sc) {
   if (choices.length) {
     bottom = `<div class="tap-hint tap-hint-hidden choice-next-hint">(터치로 선택)</div>`
       + `<div class="choices choices-hidden">` + choices.map(({ ch, i }) =>
-      `<button class="choice-btn${isRageChoice(ch) ? ' rage-choice' : ''}" data-i="${i}">${fill(ch.label)}</button>`).join('') + `</div>`;
+      `<button class="choice-btn${isRageChoice(ch) ? ' rage-choice' : ''}" data-source="${ch.source}" data-i="${i}">${fill(ch.label)}</button>`).join('') + `</div>`;
   } else if (sc.next) {
     bottom = `<div class="tap-hint tap-hint-hidden">(터치로 진행)</div>`;
   } else {
@@ -507,8 +549,11 @@ function renderScene(sc) {
   if (choices.length) {
     els.stage.querySelectorAll('.choice-btn').forEach(btn => {
       btn.onclick = () => {
-        const ch = sc.choices[+btn.dataset.i];
-        commitTransition(ch, { countTurn: true });
+        const list = btn.dataset.source === 'phone'
+          ? ((sc.phone && sc.phone.choices) || [])
+          : (sc.choices || []);
+        const ch = list[+btn.dataset.i];
+        commitTransition(ch, { countTurn: btn.dataset.source !== 'phone' });
       };
     });
     const textEl = els.stage.querySelector('.scene-text');
@@ -611,10 +656,19 @@ function revealSceneCharacter(token) {
 }
 
 function visibleChoices(sc) {
-  if (!sc.choices || !sc.choices.length) return [];
-  return sc.choices
-    .map((ch, i) => ({ ch, i }))
-    .filter(({ ch }) => isChoiceVisible(ch));
+  const sceneChoices = Array.isArray(sc.choices) ? sc.choices : [];
+  const phoneChoices = stockPhoneChoicesInDialogue(sc) ? sc.phone.choices : [];
+  return [
+    ...sceneChoices.map((ch, i) => ({ ch: { ...ch, source: 'scene' }, i })),
+    ...phoneChoices.map((ch, i) => ({ ch: { ...ch, source: 'phone' }, i })),
+  ].filter(({ ch }) => isChoiceVisible(ch));
+}
+
+function stockPhoneChoicesInDialogue(sc) {
+  const phone = sc && sc.phone;
+  if (!phone || !Array.isArray(phone.choices) || !phone.choices.length) return false;
+  const firstScreen = phone.screen || (Array.isArray(phone.sequence) && phone.sequence[0]) || '';
+  return STOCK_PHONE_SCREENS.has(firstScreen);
 }
 
 function isChoiceVisible(ch) {

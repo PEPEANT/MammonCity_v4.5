@@ -46,6 +46,16 @@ window.PhoneWidget = (function () {
     + '1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 '
     + '1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>';
 
+  const STOCK_ACTION_SCREENS = new Set(['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult']);
+
+  function firstScreen(cfg) {
+    return (cfg && cfg.screen) || (cfg && Array.isArray(cfg.sequence) && cfg.sequence[0]) || '';
+  }
+
+  function stockChoicesUseDialogue(cfg) {
+    return STOCK_ACTION_SCREENS.has(firstScreen(cfg));
+  }
+
   /* ---------- 상태바 ---------- */
   function statusbarHTML(sb) {
     sb = sb || {};
@@ -215,7 +225,7 @@ window.PhoneWidget = (function () {
           <span>평가손익 <b>0원</b></span>
           <span>예수금 <b>${money(s.cash)}</b></span>
         </div>
-        ${phoneChoicesHTML(cfg.choices)}
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -238,7 +248,7 @@ window.PhoneWidget = (function () {
       <div class="ph2-stock ph2-community">
         <div class="ph2-community-head"><b>배금전자 종목토론방</b><span>실시간</span></div>
         <div class="ph2-community-feed"><div>${rows}</div></div>
-        ${phoneChoicesHTML(cfg.choices)}
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -250,7 +260,9 @@ window.PhoneWidget = (function () {
       </div>`).join('')}</div>`;
   }
 
-  function phoneChoicesHTML(choices) {
+  function phoneChoicesHTML(cfg) {
+    const choices = cfg && cfg.choices;
+    if (stockChoicesUseDialogue(cfg)) return '';
     if (!Array.isArray(choices) || !choices.length) return '';
     return `<div class="ph2-stock-actions">${choices.map((choice, i) => `
       <button type="button" class="ph2-stock-btn" data-phone-choice="${i}">${esc(choice.label || '')}</button>
@@ -273,7 +285,7 @@ window.PhoneWidget = (function () {
           ])}
           <div class="ph2-stock-desc">주문창이 열렸다.\n보유 현금 전부로 주문 금액이 채워졌다.</div>
         </div>
-        ${phoneChoicesHTML(cfg.choices)}
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -292,7 +304,7 @@ window.PhoneWidget = (function () {
           ])}
           <div class="ph2-stock-desc">확인 버튼을 눌렀다.\n체결 알림이 화면 위에 내려왔다.</div>
         </div>
-        ${phoneChoicesHTML(cfg.choices)}
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -312,7 +324,7 @@ window.PhoneWidget = (function () {
           ])}
           <div class="ph2-stock-desc">3주차 첫날, 평가손익 숫자가 빨갛게 표시됐다.\n잔고 화면이 그대로 켜져 있었다.</div>
         </div>
-        ${phoneChoicesHTML(cfg.choices)}
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -332,7 +344,7 @@ window.PhoneWidget = (function () {
           ])}
           <div class="ph2-stock-desc">급등 알림이 떴다.\n보유 수량은 0주로 표시됐다.</div>
         </div>
-        ${phoneChoicesHTML(cfg.choices)}
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -435,12 +447,13 @@ window.PhoneWidget = (function () {
 
     const cfg = scene.phone;
     const hasChoices = Array.isArray(cfg.choices) && cfg.choices.length > 0;
+    const hasDeviceChoices = hasChoices && !stockChoicesUseDialogue(cfg);
     const textEl = cfg.revealText === 'afterFlow' ? stageEl.querySelector('.scene-text') : null;
     if (textEl) textEl.classList.add('ph2-text-delayed');
 
     const overlay = document.createElement('div');
     overlay.className = 'ph2-overlay';
-    if (textEl || hasChoices || cfg.block) overlay.classList.add('ph2-block');
+    if (textEl || hasDeviceChoices || cfg.block) overlay.classList.add('ph2-block');
     overlay.innerHTML = deviceHTML(cfg, stateSnapshot);
     overlay.addEventListener('click', event => {
       const choiceEl = event.target.closest('[data-phone-choice]');
@@ -471,7 +484,7 @@ window.PhoneWidget = (function () {
     setTimeout(() => {
       if (!overlay.isConnected) return;
       overlay.classList.add('ph2-show');
-      if (hasChoices) return;
+      if (hasDeviceChoices) return;
       runSequence(overlay, cfg, stateSnapshot, () => {
         overlay.classList.add('ph2-done');
         const afterFlowEffects = cfg.afterFlowEffects || cfg.missedEffects;

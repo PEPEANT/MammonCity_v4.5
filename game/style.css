@@ -256,6 +256,37 @@ body.preview-mode #app {
   transform: translateX(-50%) translateY(var(--character-shift-y, 0));
 }
 
+/* ===== 이미지 로딩 표시 + 도착 시 페이드인 ===== */
+/* 메인 그림(배경/단일)은 도착 전엔 투명, 도착하면 부드럽게 나타난다. 캐릭터는 자체 등장 연출 유지. */
+.scene-img.has-art > img:not(.scene-character) {
+  transition: opacity 0.45s ease;
+}
+.scene-img.is-loading > img:not(.scene-character) {
+  opacity: 0;
+}
+.scene-loader {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 3px solid rgba(216, 180, 93, 0.22);
+  border-top-color: rgba(216, 180, 93, 0.9);
+  animation: sceneSpin 0.7s linear infinite;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+.scene-img:not(.is-loading) .scene-loader {
+  opacity: 0;
+  visibility: hidden;
+}
+@keyframes sceneSpin {
+  to { transform: rotate(360deg); }
+}
+
 .ph {
   position: relative;
   z-index: 1;
