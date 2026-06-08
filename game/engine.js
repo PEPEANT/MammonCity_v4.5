@@ -19,6 +19,7 @@ const SAVE_KEY = 'baegeumdosi_save_v2';
 const LEGACY_SAVE_KEY = 'baegeumdosi_save_v1';
 const STARTING_CASH = 300000;
 const MAX_ANGER = 5;
+const MAX_HUMANITY = 5;
 const MAX_HISTORY = 50;
 const STOCK_PHONE_SCREENS = new Set(['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult']);
 const ENDING_SCENE_CHAINS = {
@@ -56,7 +57,7 @@ function newGame() {
       debt: 0,
       assets: 0,
     },
-    meters: { anger: 0 },
+    meters: { anger: 0, humanity: MAX_HUMANITY },
     affection: {},
     flags: {},
     unlocked: [],
@@ -88,6 +89,9 @@ function applyPreviewOverrides(target) {
   const anger = ENGINE_PARAMS.get('anger');
   if (anger != null) target.meters.anger = clampAnger(anger);
 
+  const humanity = ENGINE_PARAMS.get('humanity');
+  if (humanity != null) target.meters.humanity = clampHumanity(humanity);
+
   const cash = ENGINE_PARAMS.get('cash');
   if (cash != null && !Number.isNaN(Number(cash))) target.economy.cash = Number(cash);
 
@@ -117,6 +121,7 @@ function normalizeState(raw) {
     next.economy = { ...next.economy, ...(raw.economy || {}) };
     next.meters = { ...next.meters, ...(raw.meters || {}) };
     next.meters.anger = clampAnger(next.meters.anger);
+    next.meters.humanity = clampHumanity(next.meters.humanity);
     next.affection = { ...(raw.affection || {}) };
     next.flags = { ...(raw.flags || {}) };
     next.unlocked = Array.isArray(raw.unlocked) ? [...raw.unlocked] : [];
@@ -189,6 +194,10 @@ function clampAnger(value) {
   return Math.max(0, Math.min(MAX_ANGER, Number(value || 0)));
 }
 
+function clampHumanity(value) {
+  return Math.max(0, Math.min(MAX_HUMANITY, Number(value == null ? MAX_HUMANITY : value)));
+}
+
 function netWorth(target = state) {
   const economy = target.economy || {};
   return Number(economy.cash || 0) + Number(economy.assets || 0) - Number(economy.debt || 0);
@@ -226,6 +235,11 @@ function angerGaugeHTML() {
   return `<span class="anger-meter${full}" aria-label="분노 ${anger}/${MAX_ANGER}">
     <span class="anger-label">분노</span><span class="anger-cells">${cells}</span>
   </span>`;
+}
+
+function humanityStatHTML() {
+  const humanity = clampHumanity(state.meters && state.meters.humanity);
+  return `<span class="humanity-stat" aria-label="인간성 ${humanity}/${MAX_HUMANITY}">인간성 ${humanity}</span>`;
 }
 
 function escapeHTML(value) {
@@ -490,6 +504,7 @@ function renderHeader(sc) {
     <span class="hdr-title">${escapeHTML(title)}</span>
     <span class="hdr-stats">
       <span class="money-stat">돈 ${formatCompactMoney(state.economy.cash)}</span>
+      ${humanityStatHTML()}
       ${angerGaugeHTML()}
       <button class="map-btn" data-act="map">${PREVIEW_MODE ? '지도' : '세이브'}</button>
     </span>`;
@@ -1000,6 +1015,7 @@ function applyEffects(node) {
   applyEconomyDelta('assets', effects.assets);
   applyAngerDelta(effects.anger);
   applyAngerDelta(effects.rage);
+  applyHumanityDelta(effects.humanity);
   if (effects.economy) {
     applyEconomyDelta('cash', effects.economy.cash);
     applyEconomyDelta('debt', effects.economy.debt);
@@ -1007,12 +1023,14 @@ function applyEffects(node) {
   }
   if (effects.meters) {
     applyAngerDelta(effects.meters.anger);
+    applyHumanityDelta(effects.meters.humanity);
   }
 
   if (typeof effects.setCash === 'number') state.economy.cash = effects.setCash;
   if (typeof effects.setDebt === 'number') state.economy.debt = effects.setDebt;
   if (typeof effects.setAssets === 'number') state.economy.assets = effects.setAssets;
   if (typeof effects.setAnger === 'number') state.meters.anger = clampAnger(effects.setAnger);
+  if (typeof effects.setHumanity === 'number') state.meters.humanity = clampHumanity(effects.setHumanity);
   if (typeof effects.startingCash === 'number') state.economy.startingCash = effects.startingCash;
 
   if (typeof node.week === 'number') state.progress.week = node.week;
@@ -1133,6 +1151,12 @@ function applyAngerDelta(delta) {
   if (typeof delta !== 'number') return;
   state.meters = state.meters || { anger: 0 };
   state.meters.anger = clampAnger(Number(state.meters.anger || 0) + delta);
+}
+
+function applyHumanityDelta(delta) {
+  if (typeof delta !== 'number') return;
+  state.meters = state.meters || { anger: 0, humanity: MAX_HUMANITY };
+  state.meters.humanity = clampHumanity(clampHumanity(state.meters.humanity) + delta);
 }
 
 function unlock(ids) {

@@ -101,8 +101,13 @@ body.preview-mode #app {
   font-weight: 800;
 }
 
-.money-stat {
+.money-stat,
+.humanity-stat {
   white-space: nowrap;
+}
+
+.humanity-stat {
+  color: var(--green);
 }
 
 .anger-meter {

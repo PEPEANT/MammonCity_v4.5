@@ -177,6 +177,38 @@ window.STORY = {
       image: 'assets/week1/work/convenience-store-front.png',
       speaker: '{이름}(25)',
       text: '마감 불을 껐는데도 간판은 한참 더 밝았다.\n\n오늘 번 돈보다,\n집에 가는 길에 지나칠 불빛이 더 많았다.',
+      next: 'a1_wallet_find',
+    },
+    a1_wallet_find: {
+      header: '1막: 골목',
+      image: 'assets/week1/street/studio-front.png',
+      speaker: '{이름}(25)',
+      text: '고시원으로 돌아가는 골목에 지갑 하나가 떨어져 있었다.\n\n안에는 신분증과 현금이 있었다.\n주인이 찾으러 오기 전까지, 이 골목엔 나밖에 없었다.',
+      choices: [
+        {
+          label: '주인을 찾아 돌려준다',
+          next: 'a1_wallet_returned',
+          effects: { cash: 20000, flags: { wallet_choice: 'returned', seed_wallet: 'clean' } },
+        },
+        {
+          label: '그냥 가진다',
+          next: 'a1_wallet_kept',
+          effects: { cash: 180000, meters: { humanity: -1 }, flags: { wallet_choice: 'kept', seed_wallet: 'dirty' } },
+        },
+      ],
+    },
+    a1_wallet_returned: {
+      header: '1막: 골목',
+      image: 'assets/week1/street/studio-front.png',
+      speaker: '{이름}(25)',
+      text: '전화를 걸자, 지갑 주인은 몇 번이나 고맙다고 했다.\n\n사례금은 이만 원.\n큰돈은 아니었다. 그래도 손바닥은 깨끗했다.',
+      next: 'a1_after_work_homefront',
+    },
+    a1_wallet_kept: {
+      header: '1막: 골목',
+      image: 'assets/week1/street/studio-front.png',
+      speaker: '{이름}(25)',
+      text: '신분증을 빼고, 현금만 주머니에 넣었다.\n\n심장은 빠르게 뛰었지만 아무도 보지 않았다.\n그 사실이 이상하게 더 무서웠다.',
       next: 'a1_after_work_homefront',
     },
     a1_after_work_homefront: {
