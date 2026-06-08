@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>배금도시 — 홈(반영형 허브) 프로토타입</title>
+<style>
+  :root{
+    --bg:#08090b; --coal:#0f1114; --line:rgba(245,239,226,.14); --gold:#d8b45d;
+    --red:#e23b30; --blue:#2f6fe0; --rot:#6f7d5a; --ink:#f5efe2; --dim:#9a9384;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+  body{background:radial-gradient(circle at 50% 0%,rgba(216,180,93,.10),transparent 30%),var(--bg);
+    color:var(--ink); font-family:"Gothic A1",system-ui,sans-serif; min-height:100dvh;
+    display:flex; flex-direction:column; align-items:center; gap:10px; padding:14px}
+  .cap{color:var(--dim); font-size:12px; text-align:center; max-width:420px; line-height:1.5}
+  .cap b{color:var(--gold)}
+
+  .phone{width:100%; max-width:400px; height:800px; max-height:92dvh; background:var(--coal);
+    border:1px solid var(--line); border-radius:26px; overflow:hidden; position:relative;
+    box-shadow:0 24px 70px rgba(0,0,0,.6); display:flex; flex-direction:column}
+  .status{flex:0 0 auto; height:28px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px; font-size:11px; font-weight:800; color:#cfc7bb; background:#0b0c0e}
+  .status .b{display:inline-flex; gap:3px; align-items:center}
+  .status .b i{width:5px; height:9px; background:rgba(245,239,226,.35); border-radius:1px}
+  .status .b i.on{background:#1db089}
+
+  .screen{flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; position:relative;
+    background:linear-gradient(180deg,#101216,#0a0b0d)}
+  .screen::-webkit-scrollbar{width:0}
+
+  /* ── 주인공 카드 ── */
+  .who{padding:16px 16px 12px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#16140f,transparent)}
+  .who .row{display:flex; align-items:baseline; gap:8px}
+  .who .name{font-size:19px; font-weight:800; color:var(--ink)}
+  .who .age{font-size:12px; font-weight:700; color:var(--dim)}
+  .who .chip{margin-left:auto; font-size:10px; font-weight:800; color:var(--gold);
+    border:1px solid rgba(216,180,93,.4); border-radius:20px; padding:3px 9px}
+  .who .mood{font-size:13px; color:#cfc7bb; margin-top:7px; line-height:1.5; word-break:keep-all; white-space:pre-line}
+
+  /* ── 돈 ── */
+  .cash{padding:14px 16px; border-bottom:1px solid var(--line)}
+  .cash .lab{font-size:11px; font-weight:800; color:var(--dim); letter-spacing:.5px}
+  .cash .num{font-size:30px; font-weight:800; letter-spacing:-.5px; margin-top:2px}
+  .cash .num.minus{color:var(--blue)}
+  .cash .src{font-size:11px; color:var(--dim); font-weight:700; margin-top:4px; word-break:keep-all}
+  .cash .src b{color:var(--red)}
+
+  /* ── 아이러니 두 막대 ── */
+  .bars{padding:14px 16px 6px; border-bottom:1px solid var(--line)}
+  .bar{margin-bottom:13px}
+  .bar:last-child{margin-bottom:4px}
+  .bar .top{display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-bottom:5px}
+  .bar .top .l{color:#cfc7bb}
+  .bar .top .v{font-weight:800}
+  .bar .track{height:9px; border-radius:6px; background:rgba(245,239,226,.08); overflow:hidden}
+  .bar .fill{height:100%; border-radius:6px; transition:width .5s ease}
+  .bar.up .v{color:var(--gold)}      .bar.up .fill{background:linear-gradient(90deg,#9c7a2e,var(--gold))}
+  .bar.down .v{color:var(--rot)}     .bar.down .fill{background:linear-gradient(90deg,#3a4430,var(--rot))}
+  .bars .note{font-size:11px; color:var(--dim); font-weight:700; text-align:center; padding:4px 0 2px; word-break:keep-all}
+
+  /* ── 방(물건 누적) ── */
+  .room{padding:14px 16px}
+  .room .h{font-size:11px; font-weight:800; color:var(--dim); letter-spacing:.5px; margin-bottom:10px}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:9px}
+  .obj{border:1px solid var(--line); border-radius:12px; padding:11px 12px; background:rgba(245,239,226,.03);
+    min-height:74px; display:flex; flex-direction:column; gap:5px}
+  .obj .ico{font-size:20px; line-height:1}
+  .obj .t{font-size:13px; font-weight:800; color:#e4ddcd}
+  .obj .d{font-size:11px; color:var(--dim); font-weight:600; line-height:1.4; word-break:keep-all}
+  .obj.bad{border-color:rgba(111,125,90,.4); background:rgba(111,125,90,.07)}
+  .obj.bad .t{color:#b9c2a3}
+  .obj.warn{border-color:rgba(226,59,48,.35); background:rgba(226,59,48,.06)}
+  .obj.warn .d{color:#e8a59d}
+
+  /* ── 잠긴 미래(V2 그림자) ── */
+  .future{padding:6px 16px 18px}
+  .future .h{font-size:11px; font-weight:800; color:var(--dim); letter-spacing:.5px; margin-bottom:10px}
+  .locks{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+  .lock{border:1px dashed rgba(245,239,226,.18); border-radius:12px; padding:12px 6px; text-align:center;
+    color:#5a574f; position:relative; opacity:.7}
+  .lock .ico{font-size:20px; filter:grayscale(1)}
+  .lock .t{font-size:11px; font-weight:800; margin-top:5px}
+  .lock .badge{position:absolute; top:-7px; right:-5px; font-size:8px; font-weight:800; color:#0a0b0d;
+    background:var(--gold); border-radius:10px; padding:2px 6px}
+  .future .cap2{font-size:10.5px; color:#6c6c66; text-align:center; margin-top:10px; line-height:1.5; word-break:keep-all}
+
+  /* ── 진행(다음 챕터) ── */
+  .go{padding:4px 16px 18px}
+  .go-btn{width:100%; min-height:52px; border:none; border-radius:13px; font:inherit; font-size:15px;
+    font-weight:800; color:#0a0b0d; background:linear-gradient(90deg,#caa64f,var(--gold))}
+  .go-btn:active{opacity:.88}
+
+  /* ── 챕터 토글(프로토타입 전용) ── */
+  .toggles{display:flex; gap:7px; flex-wrap:wrap; justify-content:center; max-width:420px}
+  .toggles button{font:inherit; font-size:12px; font-weight:800; color:var(--dim); cursor:pointer;
+    background:var(--coal); border:1px solid var(--line); border-radius:20px; padding:7px 14px}
+  .toggles button.on{color:#0a0b0d; background:var(--gold); border-color:var(--gold)}
+</style>
+</head>
+<body>
+  <div class="cap">배금도시 — <b>홈(반영형 허브) 프로토타입</b><br>
+    챕터 사이에 돌아오는 방. <b>숫자(돈·외형)는 오르고, 방·신뢰는 썩는다.</b> 읽기 전용 — 사는 재미 없음(🔒=V2).</div>
+
+  <div class="toggles" id="toggles">
+    <button data-wk="1">1주차 직후</button>
+    <button data-wk="3">3주차 직후</button>
+    <button data-wk="5">5주차 · 흙수저 직전</button>
+  </div>
+
+  <div class="phone">
+    <div class="status">
+      <span id="clock">2:14</span>
+      <span class="b"><i class="on"></i><i></i><i></i><i></i> 11%</span>
+    </div>
+    <div class="screen" id="screen"><!-- JS가 그림 --></div>
+  </div>
+
+<script>
+(function(){
+  const won = n => (n<0?'-':'') + Math.abs(n).toLocaleString('ko-KR') + '원';
+
+  // 같은 엔진 state(player/economy.cash/meters/affection)를 "보여주기"만 하는 화면.
+  // 진행할수록 외형↑ / 속↓ 가 반대로 벌어지는 게 핵심 연출.
+  const STATES = {
+    1: {
+      mood: '아직은, 다들 한다는 거 살짝 발만 담갔을 뿐이야.\n별일 아니야. 진짜로.',
+      cash: 2_140_000, cashSrc: '월급 + 적금 깬 돈',
+      ext: 22, extLab: '외형(돈·스펙)', int: 78, intLab: '방·엄마·신뢰',
+      objs: [
+        {c:'',    ico:'🍱', t:'엄마 반찬', d:'아직 따뜻하다. "밥 챙겨 먹어."'},
+        {c:'',    ico:'🪙', t:'통장', d:'잔액이 보이는 게 마음 편하다.'},
+        {c:'',    ico:'🪞', t:'거울', d:'평범한 얼굴. 눈은 아직 맑다.'},
+        {c:'',    ico:'📱', t:'폰', d:'종토방 알림 1개. 껐다.'},
+      ],
+    },
+    3: {
+      mood: '한 번만 더. 이번만 회수하면 다 정리할 수 있어.\n…엄마한텐 아직 말 안 했다.',
+      cash: 380_000, cashSrc: '<b>엄마 통장에서 빌린</b> 돈 일부',
+      ext: 58, extLab: '외형(돈·스펙)', int: 41, intLab: '방·엄마·신뢰',
+      objs: [
+        {c:'bad',  ico:'🍱', t:'엄마 반찬', d:'굳어 있다. 손 안 댄 지 사흘.'},
+        {c:'warn', ico:'🥫', t:'빈 캔', d:'네 개로 늘었다. 누가 안 치운다.'},
+        {c:'bad',  ico:'🪞', t:'거울', d:'안 본다. 보면 변명이 길어진다.'},
+        {c:'warn', ico:'📱', t:'폰', d:'알림 41개. 엄마 부재중 3통.'},
+      ],
+    },
+    5: {
+      mood: '돈은… 한때 꽤 불었었지.\n근데 지금 이 방에, 나 말고 남은 게 뭐냐.',
+      cash: -7_900_000, cashSrc: '<b>대출 상환 연체</b> · 마이너스',
+      ext: 81, extLab: '외형(한때 찍은 최고치)', int: 9, intLab: '방·엄마·신뢰',
+      objs: [
+        {c:'bad',  ico:'🍱', t:'엄마 반찬', d:'더는 안 온다. 냉장고가 비었다.'},
+        {c:'warn', ico:'🥫', t:'빈 캔', d:'세지 않는다. 발에 차인다.'},
+        {c:'warn', ico:'🪞', t:'거울', d:'금이 갔다. 그날 주먹으로.'},
+        {c:'warn', ico:'🔌', t:'고지서', d:'독촉장 위에 또 독촉장.'},
+      ],
+    },
+  };
+
+  function render(wk){
+    const s = STATES[wk];
+    const objHTML = s.objs.map(o =>
+      `<div class="obj ${o.c}"><span class="ico">${o.ico}</span><span class="t">${o.t}</span><span class="d">${o.d}</span></div>`
+    ).join('');
+    document.getElementById('screen').innerHTML = `
+      <div class="who">
+        <div class="row"><span class="name">김특붕</span><span class="age">25</span>
+          <span class="chip">${wk}주차 직후</span></div>
+        <div class="mood">${s.mood}</div>
+      </div>
+
+      <div class="cash">
+        <div class="lab">지금 손에 쥔 돈</div>
+        <div class="num ${s.cash<0?'minus':''}">${won(s.cash)}</div>
+        <div class="src">출처 · ${s.cashSrc}</div>
+      </div>
+
+      <div class="bars">
+        <div class="bar up"><div class="top"><span class="l">${s.extLab}</span><span class="v">${s.ext}</span></div>
+          <div class="track"><div class="fill" style="width:${s.ext}%"></div></div></div>
+        <div class="bar down"><div class="top"><span class="l">${s.intLab}</span><span class="v">${s.int}</span></div>
+          <div class="track"><div class="fill" style="width:${s.int}%"></div></div></div>
+        <div class="note">올라가는 건 껍데기. 무너지는 건 나.</div>
+      </div>
+
+      <div class="room">
+        <div class="h">내 방 — 돌아올 때마다 쌓인다</div>
+        <div class="grid">${objHTML}</div>
+      </div>
+
+      <div class="future">
+        <div class="h">언젠가… (지금은 못 산다)</div>
+        <div class="locks">
+          <div class="lock"><span class="badge">V2</span><div class="ico">🏢</div><div class="t">부동산</div></div>
+          <div class="lock"><span class="badge">V2</span><div class="ico">🏎️</div><div class="t">스포츠카</div></div>
+          <div class="lock"><span class="badge">V2</span><div class="ico">🏪</div><div class="t">매장</div></div>
+        </div>
+        <div class="cap2">자리·데이터는 지금 깔려 있다. 사는 재미는 배금도시2로.<br>V1에선 사도 방의 공허는 그대로 — 그게 핵심.</div>
+      </div>
+
+      <div class="go">
+        <button class="go-btn">${wk<5?`${wk+1}주차로 →`:'…흙수저 엔딩 보러 가기'}</button>
+      </div>`;
+    document.querySelectorAll('#toggles button').forEach(b=>b.classList.toggle('on', +b.dataset.wk===wk));
+  }
+
+  document.querySelectorAll('#toggles button').forEach(b=> b.onclick=()=>render(+b.dataset.wk));
+  function clock(){ const d=new Date(); document.getElementById('clock').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+  render(1); clock(); setInterval(clock,10000);
+})();
+</script>
+</body>
+</html>

@@ -31,6 +31,15 @@ window.PhoneWidget = (function () {
     }[ch]));
   }
 
+  function money(v) {
+    return `${Math.round(Number(v || 0)).toLocaleString('ko-KR')}원`;
+  }
+
+  function signedMoney(v) {
+    const n = Math.round(Number(v || 0));
+    return `${n >= 0 ? '+' : '-'}${Math.abs(n).toLocaleString('ko-KR')}원`;
+  }
+
   // 핸드셋 아이콘(폰트 의존 없이 항상 동일하게 보이도록 인라인 SVG)
   const HANDSET = '<svg class="ph2-ico-svg" viewBox="0 0 24 24" aria-hidden="true">'
     + '<path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 '
@@ -109,12 +118,19 @@ window.PhoneWidget = (function () {
   function screenMessages(cfg) {
     const contact = esc(cfg.contact || cfg.caller || '엄마');
     const rows = (Array.isArray(cfg.messages) ? cfg.messages : []).map(msg => {
+      // 시스템 줄: 날짜 구분선 / 송금 알림 등 (가운데, 회색)
+      if (msg.type === 'system' || msg.from === 'system' || msg.system) {
+        const tone = msg.tone === 'money' ? ' ph2-msg-money' : '';
+        return `<div class="ph2-msg-system${tone}">${esc(msg.text || '')}</div>`;
+      }
       const side = (msg.from === 'me' || msg.side === 'me') ? 'me' : 'them';
       const name = esc(msg.name || (side === 'me' ? '나' : contact));
+      const note = msg.note ? `<div class="ph2-msg-note">${esc(msg.note)}</div>` : '';
       return `
         <div class="ph2-msg-row ph2-msg-${side}">
           <div class="ph2-msg-name">${name}</div>
           <div class="ph2-msg-bubble">${esc(msg.text || '')}</div>
+          ${note}
         </div>`;
     }).join('');
 
@@ -134,25 +150,219 @@ window.PhoneWidget = (function () {
       </div>`;
   }
 
+  /* ---------- 화면: 주식앱 ---------- */
+  function stockParams(cfg) {
+    const stock = cfg.stock || cfg;
+    const buyPrice = Math.max(1, Number(stock.buyPrice || 72000));
+    const resultMultiplier = Math.max(0, Number(stock.resultMultiplier || 2));
+    return {
+      symbol: stock.symbol || '배금전자',
+      code: stock.code || '001457',
+      buyPrice,
+      resultPrice: Math.round(buyPrice * resultMultiplier),
+      resultMultiplier,
+    };
+  }
+
+  function stockView(cfg, state) {
+    const params = stockParams(cfg);
+    const economy = (state && state.economy) || {};
+    const flags = (state && state.flags) || {};
+    const cash = Math.max(0, Number(economy.cash || 0));
+    const baseCash = Number(flags.stock_start_cash || cash);
+    const shares = Number(flags.stock_shares || Math.floor(cash / params.buyPrice));
+    const invested = Number(flags.stock_invested || shares * params.buyPrice);
+    const leftover = Number(flags.stock_leftover || Math.max(0, cash - invested));
+    const resultValue = Number(flags.stock_result_value || shares * params.resultPrice);
+    const profit = Number(flags.stock_profit || (resultValue + leftover - baseCash));
+    const missedShares = Number(flags.stock_skip_shares || Math.floor(cash / params.buyPrice));
+    const missedProfit = Number(flags.stock_skip_missed_profit || (missedShares * params.resultPrice + (cash - missedShares * params.buyPrice) - cash));
+    return { ...params, cash, baseCash, shares, invested, leftover, resultValue, profit, missedShares, missedProfit };
+  }
+
+  function stockAppBar(title, right) {
+    return `
+      <div class="ph2-stock-app">
+        <span class="ph2-stock-logo"></span>
+        <span class="ph2-stock-title">${esc(title || '배금증권')}</span>
+        <span class="ph2-stock-right">${esc(right || '내 계좌')}</span>
+      </div>`;
+  }
+
+  function screenMarket(cfg, state) {
+    const s = stockView(cfg, state);
+    return `
+      <div class="ph2-stock ph2-stock-market">
+        ${stockAppBar('배금증권', '내 계좌')}
+        <div class="ph2-stock-head">
+          <div class="ph2-stock-name">${esc(s.symbol)} <span>${esc(s.code)}</span></div>
+          <div class="ph2-stock-row">
+            <div class="ph2-stock-price">${money(s.buyPrice).replace('원', '')}</div>
+            <div class="ph2-stock-change">▲ +18.42%</div>
+          </div>
+          <div class="ph2-stock-sub">거래량 증가</div>
+        </div>
+        <div class="ph2-chart">
+          <span class="ph2-live">LIVE</span>
+          <div class="ph2-candles">${Array.from({ length: 18 }, (_, i) => {
+            const h = 22 + (i % 5) * 8 + (i > 10 ? 18 : 0);
+            return `<i class="${i % 4 === 0 ? 'down' : 'up'}" style="height:${h}px"></i>`;
+          }).join('')}</div>
+          <div class="ph2-rsi"><b>RSI(14)</b><span></span></div>
+        </div>
+        <div class="ph2-stock-hold">
+          <span>보유 <b>0주</b></span>
+          <span>평가손익 <b>0원</b></span>
+          <span>예수금 <b>${money(s.cash)}</b></span>
+        </div>
+        ${phoneChoicesHTML(cfg.choices)}
+      </div>`;
+  }
+
+  function screenCommunity(cfg) {
+    const posts = cfg.posts || [
+      { user: '불개미', text: '오늘 장 끝까지 봐라. 거래량 붙었다.', hot: true, rec: 142 },
+      { user: '존버맨', text: '시초에 못 산 사람들 계속 쳐다만 봄.', rec: 88 },
+      { user: '물린사람', text: '위에서 잡았는데 아직 안 팔았다.', down: true, rec: 31 },
+      { user: '호가창', text: '매도벽 먹는 중. 숫자 봐라.', hot: true, rec: 166 },
+      { user: '신용계좌', text: '가능금액 전부 걸었다.', rec: 77 },
+      { user: '한방', text: '방금 시장가로 들어갔다.', hot: true, rec: 120 },
+    ];
+    const rows = posts.concat(posts).map(p => `
+      <div class="ph2-post${p.hot ? ' hot' : ''}${p.down ? ' down' : ''}">
+        <div class="ph2-post-user">${esc(p.user)}</div>
+        <div class="ph2-post-text">${esc(p.text)}</div>
+        <div class="ph2-post-meta">추천 ${Number(p.rec || 0).toLocaleString('ko-KR')} · 방금</div>
+      </div>`).join('');
+    return `
+      <div class="ph2-stock ph2-community">
+        <div class="ph2-community-head"><b>배금전자 종목토론방</b><span>실시간</span></div>
+        <div class="ph2-community-feed"><div>${rows}</div></div>
+        ${phoneChoicesHTML(cfg.choices)}
+      </div>`;
+  }
+
+  function metricHTML(items) {
+    return `<div class="ph2-metrics">${items.map(([label, value, cls]) => `
+      <div class="ph2-metric">
+        <span>${esc(label)}</span>
+        <b class="${cls || ''}">${esc(value)}</b>
+      </div>`).join('')}</div>`;
+  }
+
+  function phoneChoicesHTML(choices) {
+    if (!Array.isArray(choices) || !choices.length) return '';
+    return `<div class="ph2-stock-actions">${choices.map((choice, i) => `
+      <button type="button" class="ph2-stock-btn" data-phone-choice="${i}">${esc(choice.label || '')}</button>
+    `).join('')}</div>`;
+  }
+
+  function screenOrderDecision(cfg, state) {
+    const s = stockView(cfg, state);
+    return `
+      <div class="ph2-stock ph2-order">
+        ${stockAppBar('매수 주문', '시장가')}
+        <div class="ph2-stock-panel">
+          <div class="ph2-panel-label">매수 가능 금액</div>
+          <div class="ph2-panel-big">${money(s.cash)}</div>
+          ${metricHTML([
+            ['현재가', money(s.buyPrice)],
+            ['가능 수량', `${s.shares.toLocaleString('ko-KR')}주`],
+            ['주문 금액', money(s.invested)],
+            ['남은 예수금', money(s.leftover)],
+          ])}
+          <div class="ph2-stock-desc">주문창이 열렸다.\n보유 현금 전부로 주문 금액이 채워졌다.</div>
+        </div>
+        ${phoneChoicesHTML(cfg.choices)}
+      </div>`;
+  }
+
+  function screenOrderFilled(cfg, state) {
+    const s = stockView(cfg, state);
+    return `
+      <div class="ph2-stock ph2-order">
+        ${stockAppBar('체결 내역', '2주차')}
+        <div class="ph2-stock-panel">
+          <div class="ph2-fill-mark">매수 체결</div>
+          ${metricHTML([
+            ['종목', s.symbol],
+            ['체결가', money(s.buyPrice)],
+            ['체결 수량', `${s.shares.toLocaleString('ko-KR')}주`],
+            ['남은 예수금', money(s.leftover)],
+          ])}
+          <div class="ph2-stock-desc">확인 버튼을 눌렀다.\n체결 알림이 화면 위에 내려왔다.</div>
+        </div>
+        ${phoneChoicesHTML(cfg.choices)}
+      </div>`;
+  }
+
+  function screenMarketResult(cfg, state) {
+    const s = stockView(cfg, state);
+    return `
+      <div class="ph2-stock ph2-result">
+        ${stockAppBar('평가손익', '3주차')}
+        <div class="ph2-stock-panel">
+          <div class="ph2-panel-label">평가손익</div>
+          <div class="ph2-panel-big gain">${signedMoney(s.profit)}</div>
+          ${metricHTML([
+            ['보유 수량', `${s.shares.toLocaleString('ko-KR')}주`],
+            ['평가금액', money(s.resultValue)],
+            ['수익률', `+${Math.round((s.resultMultiplier - 1) * 100)}%`, 'gain'],
+            ['예수금', money(s.leftover)],
+          ])}
+          <div class="ph2-stock-desc">3주차 첫날, 평가손익 숫자가 빨갛게 표시됐다.\n잔고 화면이 그대로 켜져 있었다.</div>
+        </div>
+        ${phoneChoicesHTML(cfg.choices)}
+      </div>`;
+  }
+
+  function screenMissedResult(cfg, state) {
+    const s = stockView(cfg, state);
+    return `
+      <div class="ph2-stock ph2-result">
+        ${stockAppBar('가격 알림', '3주차')}
+        <div class="ph2-stock-panel">
+          <div class="ph2-panel-label">보유 수량</div>
+          <div class="ph2-panel-big">0주</div>
+          ${metricHTML([
+            ['예수금', money(s.cash)],
+            ['현재가', money(s.resultPrice)],
+            ['놓친 평가손익', signedMoney(s.missedProfit), 'gain'],
+            ['수익률', `+${Math.round((s.resultMultiplier - 1) * 100)}%`, 'gain'],
+          ])}
+          <div class="ph2-stock-desc">급등 알림이 떴다.\n보유 수량은 0주로 표시됐다.</div>
+        </div>
+        ${phoneChoicesHTML(cfg.choices)}
+      </div>`;
+  }
+
   const SCREENS = {
     ringing: screenRinging,
     missed: screenRecents,
     recents: screenRecents,
     messages: screenMessages,
+    market: screenMarket,
+    community: screenCommunity,
+    orderDecision: screenOrderDecision,
+    orderFilled: screenOrderFilled,
+    marketResult: screenMarketResult,
+    missedResult: screenMissedResult,
   };
 
-  function screenHTML(kind, cfg) {
-    return (SCREENS[kind] || screenRinging)(cfg);
+  function screenHTML(kind, cfg, stateSnapshot) {
+    return (SCREENS[kind] || screenRinging)(cfg, stateSnapshot);
   }
 
   /* ---------- 기기(베젤+상태바+화면) ---------- */
-  function deviceHTML(cfg) {
+  function deviceHTML(cfg, stateSnapshot) {
     const first = cfg.screen || (cfg.sequence && cfg.sequence[0]) || 'ringing';
-    const kindClass = first === 'messages' ? ' ph2-device-msg' : '';
+    const kindClass = first === 'messages' ? ' ph2-device-msg'
+      : ['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult'].includes(first) ? ' ph2-device-stock'
+      : '';
     return `
       <div class="ph2-device${kindClass}" data-state="${esc(first)}">
         ${statusbarHTML(cfg.statusbar)}
-        <div class="ph2-screen">${screenHTML(first, cfg)}</div>
+        <div class="ph2-screen">${screenHTML(first, cfg, stateSnapshot)}</div>
         <div class="ph2-navbar"></div>
       </div>`;
   }
@@ -164,13 +374,13 @@ window.PhoneWidget = (function () {
     textEl.classList.add('ph2-text-reveal');
   }
 
-  function switchScreen(device, kind, cfg, done) {
+  function switchScreen(device, kind, cfg, stateSnapshot, done) {
     if (!device.isConnected) return;
     const screen = device.querySelector('.ph2-screen');
     screen.classList.add('ph2-switching');
     setTimeout(() => {
       if (!device.isConnected) return;
-      screen.innerHTML = screenHTML(kind, cfg);
+      screen.innerHTML = screenHTML(kind, cfg, stateSnapshot);
       device.dataset.state = kind;
       // 다음 프레임에 페이드 복귀
       requestAnimationFrame(() => {
@@ -181,7 +391,7 @@ window.PhoneWidget = (function () {
   }
 
   /* ---------- 시퀀스 진행 ---------- */
-  function runSequence(overlay, cfg, done) {
+  function runSequence(overlay, cfg, stateSnapshot, done) {
     const device = overlay.querySelector('.ph2-device');
     const seq = Array.isArray(cfg.sequence) && cfg.sequence.length ? cfg.sequence : [cfg.screen || 'ringing'];
     if (seq.length < 2) {
@@ -205,7 +415,7 @@ window.PhoneWidget = (function () {
       setTimeout(() => {
         if (!device.isConnected) return;
         device.dataset.state = 'ending';
-        setTimeout(() => switchScreen(device, seq[index + 1], cfg, () => {
+        setTimeout(() => switchScreen(device, seq[index + 1], cfg, stateSnapshot, () => {
           index += 1;
           next();
         }), 520);
@@ -217,7 +427,7 @@ window.PhoneWidget = (function () {
   }
 
   /* ---------- 엔진이 부르는 진입점 ---------- */
-  function bind(stageEl, scene) {
+  function bind(stageEl, scene, stateSnapshot) {
     if (!scene || !scene.phone) return;
     const host = stageEl.querySelector('.scene-img');
     if (!host) return;
@@ -231,7 +441,7 @@ window.PhoneWidget = (function () {
     const overlay = document.createElement('div');
     overlay.className = 'ph2-overlay';
     if (textEl || hasChoices || cfg.block) overlay.classList.add('ph2-block');
-    overlay.innerHTML = deviceHTML(cfg);
+    overlay.innerHTML = deviceHTML(cfg, stateSnapshot);
     overlay.addEventListener('click', event => {
       const choiceEl = event.target.closest('[data-phone-choice]');
       if (choiceEl) {
@@ -262,7 +472,7 @@ window.PhoneWidget = (function () {
       if (!overlay.isConnected) return;
       overlay.classList.add('ph2-show');
       if (hasChoices) return;
-      runSequence(overlay, cfg, () => {
+      runSequence(overlay, cfg, stateSnapshot, () => {
         overlay.classList.add('ph2-done');
         const afterFlowEffects = cfg.afterFlowEffects || cfg.missedEffects;
         if (afterFlowEffects || cfg.afterFlowSet || cfg.afterFlowUnlock) {

@@ -81,6 +81,10 @@
   width: min(74%, 282px);
 }
 
+.ph2-device-stock {
+  width: min(82%, 318px);
+}
+
 /* ---------- 상태바 ---------- */
 .ph2-status {
   flex: 0 0 auto;
@@ -417,6 +421,34 @@
   border-bottom-right-radius: 4px;
 }
 
+.ph2-msg-note {
+  padding: 0 4px;
+  color: #9aa1ab;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.ph2-msg-system {
+  align-self: center;
+  margin: 5px auto;
+  padding: 3px 10px;
+  border-radius: 9px;
+  background: rgba(80, 88, 99, 0.78);
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.ph2-msg-system.ph2-msg-money {
+  background: rgba(29, 139, 255, 0.16);
+  color: #cfe3ff;
+  border: 1px solid rgba(29, 139, 255, 0.4);
+}
+
 .ph2-msg-choices {
   flex: 0 0 auto;
   display: flex;
@@ -444,9 +476,369 @@
   background: #e6f0ff;
 }
 
+/* ===== 주식앱 / 종토방 화면 ===== */
+.ph2-stock {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fbfbfd;
+  color: #16181c;
+  overflow: hidden;
+}
+
+.ph2-stock-app,
+.ph2-community-head {
+  flex: 0 0 auto;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  background: #ffffff;
+  border-bottom: 1px solid #eceef2;
+}
+
+.ph2-stock-logo {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #e23b30, #b21c12);
+}
+
+.ph2-stock-title,
+.ph2-community-head b {
+  color: #22252a;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ph2-stock-right,
+.ph2-community-head span {
+  margin-left: auto;
+  color: #8a9099;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-community-head span {
+  color: var(--red);
+}
+
+.ph2-stock-head {
+  flex: 0 0 auto;
+  padding: 10px 12px 5px;
+  background: #ffffff;
+}
+
+.ph2-stock-name {
+  color: #16181c;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.ph2-stock-name span {
+  margin-left: 5px;
+  color: #9aa0a8;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ph2-stock-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.ph2-stock-price {
+  color: var(--red);
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.ph2-stock-change {
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.ph2-stock-sub {
+  margin-top: 2px;
+  color: #9aa0a8;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ph2-chart {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px 12px 0;
+  background: #ffffff;
+}
+
+.ph2-live {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: var(--red);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-candles {
+  flex: 1 1 auto;
+  min-height: 94px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px;
+  border-bottom: 1px solid #eceef2;
+  padding: 16px 0 10px;
+}
+
+.ph2-candles i {
+  width: 8px;
+  min-height: 16px;
+  border-radius: 2px;
+  background: var(--red);
+}
+
+.ph2-candles i.down {
+  background: var(--blue);
+}
+
+.ph2-rsi {
+  flex: 0 0 54px;
+  position: relative;
+  border-bottom: 1px solid #eceef2;
+}
+
+.ph2-rsi b {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  color: #7a5af8;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-rsi span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #7a5af8 18%, #7a5af8 78%, transparent);
+  transform: skewY(-9deg);
+}
+
+.ph2-stock-hold {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 8px 10px;
+  background: #f4f5f7;
+  border-top: 1px solid #eceef2;
+  color: #8a9099;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-stock-hold b {
+  color: #16181c;
+}
+
+.ph2-stock-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: #ffffff;
+  border-top: 1px solid #eceef2;
+}
+
+.ph2-stock-btn {
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid rgba(22, 24, 28, 0.16);
+  border-left: 3px solid #16181c;
+  background: #ffffff;
+  color: #16181c;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.ph2-stock-btn:active {
+  background: #f1f3f6;
+}
+
+.ph2-community {
+  background: #eef0f3;
+}
+
+.ph2-community-feed {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 8%, #000 92%, transparent);
+          mask-image: linear-gradient(180deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.ph2-community-feed > div {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px;
+  animation: ph2-feed-scroll 24s linear infinite;
+}
+
+@keyframes ph2-feed-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+.ph2-post {
+  padding: 8px 9px;
+  border: 1px solid #e2e5ea;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.ph2-post.hot {
+  border-color: rgba(226, 59, 48, 0.36);
+}
+
+.ph2-post.down {
+  border-color: rgba(47, 111, 224, 0.34);
+}
+
+.ph2-post-user {
+  color: #444950;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ph2-post.hot .ph2-post-user,
+.ph2-post.hot .ph2-post-meta {
+  color: #c62b20;
+}
+
+.ph2-post.down .ph2-post-user {
+  color: var(--blue);
+}
+
+.ph2-post-text {
+  margin-top: 3px;
+  color: #23262b;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.ph2-post-meta {
+  margin-top: 4px;
+  color: #9aa0a8;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-stock-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 13px 11px;
+  background: #ffffff;
+}
+
+.ph2-panel-label {
+  color: #8a9099;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-panel-big {
+  margin-top: 3px;
+  color: #16181c;
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.ph2-panel-big.gain,
+.ph2-metric b.gain {
+  color: var(--red);
+}
+
+.ph2-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.ph2-metric {
+  min-height: 54px;
+  padding: 9px;
+  border: 1px solid #eceef2;
+  border-radius: 9px;
+  background: #f7f8fa;
+}
+
+.ph2-metric span {
+  display: block;
+  color: #8a9099;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-metric b {
+  display: block;
+  margin-top: 3px;
+  color: #16181c;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.ph2-stock-desc {
+  margin-top: 12px;
+  color: #343840;
+  white-space: pre-line;
+  word-break: keep-all;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.ph2-fill-mark {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 10px;
+  border-radius: 12px;
+  background: #f4f5f7;
+  color: var(--red);
+  font-size: 16px;
+  font-weight: 900;
+}
+
 @media (max-width: 360px) {
   .ph2-device { width: min(70%, 210px); }
   .ph2-device-msg { width: min(82%, 246px); }
+  .ph2-device-stock { width: min(90%, 270px); }
   .ph2-msg-bubble { font-size: 10px; }
   .ph2-msg-choice { font-size: 9px; }
 }

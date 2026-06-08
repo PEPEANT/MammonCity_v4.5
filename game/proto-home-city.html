@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>배금도시 - 홈/도시 상점 프로토타입</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #f7f0e4;
+      --muted: #a99f91;
+      --paper: #efe3ce;
+      --bg: #07080a;
+      --coal: #101216;
+      --panel: rgba(14, 16, 19, 0.9);
+      --line: rgba(247, 240, 228, 0.15);
+      --gold: #d7b15b;
+      --red: #df4438;
+      --blue: #356fd8;
+      --green: #1da37d;
+      --steel: #29313a;
+      --shadow: rgba(0, 0, 0, 0.58);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(215, 177, 91, 0.13), transparent 28%),
+        linear-gradient(180deg, #090a0d, #050608);
+      color: var(--ink);
+      font-family: "Gothic A1", system-ui, sans-serif;
+      overscroll-behavior: none;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .shell {
+      width: 100%;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+    }
+
+    .phone {
+      position: relative;
+      width: min(100%, 430px);
+      height: min(900px, calc(100dvh - 24px));
+      min-height: 680px;
+      overflow: hidden;
+      border: 1px solid rgba(247, 240, 228, 0.18);
+      border-radius: 28px;
+      background: var(--coal);
+      box-shadow: 0 28px 86px rgba(0, 0, 0, 0.66);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .statusbar {
+      flex: 0 0 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(6, 7, 9, 0.96);
+      border-bottom: 1px solid rgba(247, 240, 228, 0.08);
+      color: rgba(247, 240, 228, 0.74);
+      font-size: 11px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sig {
+      display: inline-flex;
+      align-items: end;
+      gap: 2px;
+      height: 12px;
+    }
+
+    .sig i {
+      width: 4px;
+      background: rgba(247, 240, 228, 0.32);
+      border-radius: 1px;
+    }
+
+    .sig i:nth-child(1) { height: 4px; }
+    .sig i:nth-child(2) { height: 7px; }
+    .sig i:nth-child(3) { height: 10px; background: var(--gold); }
+
+    .view {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #0b0d10;
+    }
+
+    .topbar {
+      flex: 0 0 auto;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(9, 10, 13, 0.96);
+    }
+
+    .screen-title {
+      min-width: 0;
+    }
+
+    .screen-title b {
+      display: block;
+      color: var(--paper);
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .screen-title span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cash-pill {
+      flex: 0 0 auto;
+      min-width: 112px;
+      padding: 7px 10px;
+      border: 1px solid rgba(29, 163, 125, 0.34);
+      background: rgba(29, 163, 125, 0.09);
+      color: #d7fff0;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .content {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background:
+        linear-gradient(180deg, rgba(215, 177, 91, 0.05), transparent 170px),
+        #0d0f13;
+    }
+
+    .content::-webkit-scrollbar {
+      width: 0;
+    }
+
+    .scene {
+      position: relative;
+      min-height: 510px;
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
+      background: #111419;
+    }
+
+    .art-slot {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(215, 177, 91, 0.12), transparent 38%),
+        repeating-linear-gradient(135deg, rgba(247, 240, 228, 0.03) 0 1px, transparent 1px 10px),
+        #171a20;
+    }
+
+    .art-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .art-slot .fallback {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: rgba(247, 240, 228, 0.64);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.45;
+      word-break: keep-all;
+      white-space: pre-line;
+    }
+
+    .art-slot.missing .fallback {
+      display: flex;
+    }
+
+    .art-slot.missing img {
+      display: none;
+    }
+
+    .room-bg,
+    .city-bg {
+      position: absolute;
+      inset: 0;
+    }
+
+    .room-bg::after,
+    .city-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.64)),
+        radial-gradient(circle at 50% 45%, transparent 0 42%, rgba(0, 0, 0, 0.4) 100%);
+    }
+
+    .art-slot.room-bg.missing .fallback,
+    .art-slot.city-bg.missing .fallback,
+    .art-slot.protagonist.missing .fallback {
+      display: none;
+    }
+
+    .room-furniture {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .floor {
+      position: absolute;
+      left: -8%;
+      right: -8%;
+      bottom: 0;
+      height: 30%;
+      background:
+        linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.22)),
+        repeating-linear-gradient(90deg, rgba(247, 240, 228, 0.05) 0 1px, transparent 1px 58px),
+        #171311;
+      transform: perspective(280px) rotateX(54deg);
+      transform-origin: bottom;
+    }
+
+    .window {
+      position: absolute;
+      left: 23px;
+      top: 58px;
+      width: 112px;
+      height: 132px;
+      border: 6px solid rgba(13, 15, 18, 0.8);
+      background:
+        linear-gradient(180deg, rgba(53, 111, 216, 0.34), rgba(9, 11, 15, 0.82)),
+        repeating-linear-gradient(90deg, transparent 0 33px, rgba(247, 240, 228, 0.11) 33px 35px);
+      box-shadow: inset 0 0 0 1px rgba(247, 240, 228, 0.08), 0 18px 34px rgba(0, 0, 0, 0.34);
+    }
+
+    .bed {
+      position: absolute;
+      left: 20px;
+      bottom: 92px;
+      width: 146px;
+      height: 74px;
+      background: #2b3139;
+      border: 1px solid rgba(247, 240, 228, 0.14);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+    }
+
+    .bed::before {
+      content: "";
+      position: absolute;
+      left: 7px;
+      right: 42px;
+      top: 7px;
+      height: 26px;
+      background: rgba(239, 227, 206, 0.62);
+    }
+
+    .desk {
+      position: absolute;
+      right: 22px;
+      bottom: 112px;
+      width: 138px;
+      height: 82px;
+      background: #2a2019;
+      border: 1px solid rgba(215, 177, 91, 0.2);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
+    }
+
+    .desk::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: -34px;
+      width: 76px;
+      height: 42px;
+      background: #0a0c10;
+      border: 1px solid rgba(247, 240, 228, 0.12);
+      box-shadow: 0 0 18px rgba(53, 111, 216, 0.18);
+    }
+
+    .door {
+      position: absolute;
+      right: 18px;
+      top: 56px;
+      width: 96px;
+      height: 210px;
+      border: 1px solid rgba(247, 240, 228, 0.16);
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.24), transparent 34%),
+        #2a211a;
+      box-shadow: inset 0 0 0 5px rgba(0, 0, 0, 0.12);
+    }
+
+    .door::after {
+      content: "";
+      position: absolute;
+      right: 14px;
+      top: 104px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    .protagonist {
+      position: absolute;
+      left: 50%;
+      bottom: 58px;
+      width: 152px;
+      height: 354px;
+      transform: translateX(-50%);
+      z-index: 3;
+      overflow: visible;
+      background: transparent;
+    }
+
+    .protagonist .fallback {
+      display: block;
+      padding: 0;
+      font-size: 0;
+    }
+
+    .protagonist.missing::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 16px;
+      width: 52px;
+      height: 58px;
+      border-radius: 48% 48% 44% 44%;
+      transform: translateX(-50%);
+      background: #d0b28b;
+      box-shadow: inset -8px -5px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .protagonist.missing::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 76px;
+      width: 104px;
+      height: 190px;
+      transform: translateX(-50%);
+      clip-path: polygon(28% 0, 72% 0, 88% 82%, 64% 100%, 50% 70%, 36% 100%, 12% 82%);
+      background:
+        linear-gradient(180deg, #292f38 0 45%, #171a20 45% 100%);
+      box-shadow: 0 18px 28px rgba(0, 0, 0, 0.34);
+    }
+
+    .protagonist img {
+      object-fit: contain;
+      filter: drop-shadow(0 24px 22px rgba(0, 0, 0, 0.46));
+    }
+
+    .hotspot {
+      position: absolute;
+      z-index: 5;
+      min-width: 86px;
+      min-height: 40px;
+      padding: 9px 11px;
+      border: 1px solid rgba(247, 240, 228, 0.2);
+      background: rgba(6, 7, 9, 0.74);
+      backdrop-filter: blur(5px);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.26);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hotspot.primary {
+      border-color: rgba(215, 177, 91, 0.58);
+      background: linear-gradient(135deg, rgba(215, 177, 91, 0.26), rgba(6, 7, 9, 0.72));
+      color: #fff7dc;
+    }
+
+    .hotspot.locked {
+      color: rgba(247, 240, 228, 0.36);
+      border-style: dashed;
+      background: rgba(7, 8, 10, 0.6);
+    }
+
+    .home-go { right: 25px; top: 286px; }
+    .home-assets { left: 22px; bottom: 198px; }
+    .home-next { left: 50%; bottom: 18px; transform: translateX(-50%); width: calc(100% - 40px); }
+
+    .hud {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 14px;
+      z-index: 6;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .hud-box {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid rgba(247, 240, 228, 0.14);
+      background: rgba(5, 6, 8, 0.68);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+    }
+
+    .hud-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .hud-box b {
+      display: block;
+      margin-top: 2px;
+      color: var(--paper);
+      font-size: 16px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .quick-panel {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #0e1014;
+    }
+
+    .stat {
+      min-height: 72px;
+      border: 1px solid var(--line);
+      background: rgba(247, 240, 228, 0.045);
+      padding: 11px;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .stat b {
+      display: block;
+      margin-top: 7px;
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+      word-break: keep-all;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .asset-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .asset-strip::-webkit-scrollbar {
+      height: 0;
+    }
+
+    .thumb {
+      flex: 0 0 78px;
+      height: 58px;
+      border: 1px solid rgba(247, 240, 228, 0.14);
+      background:
+        linear-gradient(135deg, rgba(29, 163, 125, 0.13), transparent),
+        #15181e;
+      display: grid;
+      place-items: center;
+      color: rgba(247, 240, 228, 0.72);
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.25;
+      text-align: center;
+      padding: 6px;
+    }
+
+    .empty {
+      color: rgba(247, 240, 228, 0.42);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .nav-row {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--line);
+      background: rgba(7, 8, 10, 0.96);
+    }
+
+    .nav-row button {
+      min-height: 54px;
+      background: transparent;
+      color: rgba(247, 240, 228, 0.52);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .nav-row button.on {
+      color: var(--gold);
+      background: rgba(215, 177, 91, 0.08);
+    }
+
+    .city-scene {
+      min-height: 592px;
+    }
+
+    .city-bg::after {
+      background:
+        linear-gradient(180deg, rgba(5, 7, 11, 0.14), rgba(5, 7, 11, 0.72)),
+        radial-gradient(circle at 50% 50%, transparent 0 34%, rgba(0, 0, 0, 0.44) 100%);
+    }
+
+    .city-roads {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .city-roads::before,
+    .city-roads::after {
+      content: "";
+      position: absolute;
+      background: rgba(247, 240, 228, 0.08);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14);
+    }
+
+    .city-roads::before {
+      left: -12%;
+      right: -12%;
+      top: 51%;
+      height: 42px;
+      transform: rotate(-8deg);
+    }
+
+    .city-roads::after {
+      left: 47%;
+      top: -8%;
+      width: 42px;
+      bottom: -8%;
+      transform: rotate(12deg);
+    }
+
+    .district {
+      position: absolute;
+      z-index: 2;
+      border: 1px solid rgba(247, 240, 228, 0.13);
+      background:
+        linear-gradient(180deg, rgba(247, 240, 228, 0.12), rgba(247, 240, 228, 0.03)),
+        #1c2229;
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+    }
+
+    .district::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 13px;
+      height: 7px;
+      background: rgba(215, 177, 91, 0.35);
+      box-shadow: 0 20px 0 rgba(247, 240, 228, 0.08), 0 40px 0 rgba(247, 240, 228, 0.08);
+    }
+
+    .d-car { left: 21px; top: 90px; width: 136px; height: 122px; }
+    .d-estate { right: 24px; top: 145px; width: 130px; height: 168px; }
+    .d-dept { left: 38px; bottom: 118px; width: 164px; height: 144px; }
+
+    .city-place {
+      position: absolute;
+      z-index: 7;
+      width: 134px;
+      min-height: 58px;
+      padding: 9px;
+      border: 1px solid rgba(247, 240, 228, 0.19);
+      background: rgba(6, 7, 9, 0.78);
+      backdrop-filter: blur(5px);
+      text-align: left;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.26);
+    }
+
+    .city-place b {
+      display: block;
+      color: var(--paper);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .city-place span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .city-place.locked {
+      border-style: dashed;
+      color: rgba(247, 240, 228, 0.38);
+    }
+
+    .city-place.locked b,
+    .city-place.locked span {
+      color: rgba(247, 240, 228, 0.38);
+    }
+
+    .p-car { left: 28px; top: 222px; }
+    .p-estate { right: 24px; top: 326px; }
+    .p-dept { left: 58px; bottom: 38px; }
+
+    .city-bottom {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      background: #0e1014;
+    }
+
+    .feed {
+      border: 1px solid var(--line);
+      background: rgba(247, 240, 228, 0.04);
+      padding: 12px;
+    }
+
+    .feed b {
+      display: block;
+      color: var(--paper);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .feed span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .shop-hero {
+      height: 240px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .shop-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.76)),
+        radial-gradient(circle at 50% 46%, transparent 0 48%, rgba(0, 0, 0, 0.38) 100%);
+      pointer-events: none;
+    }
+
+    .shop-copy {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 15px;
+      z-index: 3;
+    }
+
+    .shop-copy strong {
+      display: block;
+      color: var(--paper);
+      font-family: "Black Han Sans", "Gothic A1", system-ui, sans-serif;
+      font-size: 34px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .shop-copy span {
+      display: block;
+      margin-top: 8px;
+      color: rgba(247, 240, 228, 0.78);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .items {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 104px 1fr;
+      min-height: 120px;
+      border: 1px solid var(--line);
+      background: rgba(247, 240, 228, 0.045);
+    }
+
+    .item-art {
+      min-height: 120px;
+      border-right: 1px solid var(--line);
+    }
+
+    .item-body {
+      min-width: 0;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .item-name {
+      color: var(--paper);
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.25;
+      word-break: keep-all;
+    }
+
+    .item-meta {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.35;
+      word-break: keep-all;
+    }
+
+    .item-bottom {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .price {
+      color: #d7fff0;
+      font-size: 13px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .buy {
+      flex: 0 0 auto;
+      min-width: 72px;
+      min-height: 36px;
+      padding: 0 11px;
+      background: var(--paper);
+      color: #14100b;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .buy:disabled {
+      cursor: default;
+      color: rgba(247, 240, 228, 0.34);
+      background: rgba(247, 240, 228, 0.08);
+      border: 1px solid rgba(247, 240, 228, 0.12);
+    }
+
+    .back-btn {
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid rgba(247, 240, 228, 0.16);
+      background: rgba(247, 240, 228, 0.06);
+      color: var(--paper);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(9, 10, 13, 0.96);
+    }
+
+    .toolbar .cash-pill {
+      min-width: 102px;
+    }
+
+    .assets-page {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .asset-row {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      min-height: 96px;
+      border: 1px solid var(--line);
+      background: rgba(247, 240, 228, 0.045);
+    }
+
+    .asset-art {
+      border-right: 1px solid var(--line);
+    }
+
+    .asset-info {
+      min-width: 0;
+      padding: 12px;
+    }
+
+    .asset-info b {
+      display: block;
+      color: var(--paper);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .asset-info span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      word-break: keep-all;
+    }
+
+    .reset {
+      color: rgba(247, 240, 228, 0.64);
+      background: transparent;
+      border: 1px solid rgba(247, 240, 228, 0.16);
+      min-height: 38px;
+      padding: 0 12px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .toast {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 72px;
+      z-index: 20;
+      min-height: 44px;
+      padding: 12px 14px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(247, 240, 228, 0.2);
+      background: rgba(8, 9, 12, 0.94);
+      color: var(--paper);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.35;
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
+    }
+
+    .toast.on {
+      display: flex;
+    }
+
+    @media (max-width: 380px) {
+      .phone {
+        min-height: 620px;
+        border-radius: 22px;
+      }
+
+      .scene {
+        min-height: 470px;
+      }
+
+      .city-scene {
+        min-height: 548px;
+      }
+
+      .protagonist {
+        width: 132px;
+        height: 316px;
+      }
+
+      .item {
+        grid-template-columns: 92px 1fr;
+      }
+
+      .shop-copy strong {
+        font-size: 29px;
+      }
+
+      .quick-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .wide {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="phone" id="phone">
+      <div class="statusbar">
+        <span id="clock">00:00</span>
+        <span class="sig" aria-label="signal"><i></i><i></i><i></i></span>
+      </div>
+      <main class="view" id="view"></main>
+      <nav class="nav-row" id="nav">
+        <button data-screen="home">방</button>
+        <button data-screen="city">밖</button>
+        <button data-screen="assets">자산</button>
+        <button data-screen="next">챕터</button>
+      </nav>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const SAVE_KEY = 'baegeumdosi_proto_home_city_v1';
+      const USE_IMAGE_FILES = false;
+      const START_STATE = {
+        player: { name: '김특붕', age: 25 },
+        week: 2,
+        cash: 82000000,
+        owned: [],
+        last: 'home',
+      };
+
+      const shops = {
+        cars: {
+          title: '스포츠카 매장',
+          subtitle: '유리문 안쪽에 비싼 차들이 줄지어 있다.',
+          minCash: 50000000,
+          hero: 'assets/shops/sportscar-showroom.png',
+          heroLabel: '스포츠카 매장 일러스트\nassets/shops/sportscar-showroom.png',
+          placeClass: 'p-car',
+          items: [
+            {
+              id: 'car-entry',
+              name: '중고 수입 쿠페',
+              note: '첫 허세. 성능보다 시선이 먼저 온다.',
+              price: 48000000,
+              image: 'assets/items/car-01.png',
+              label: '차량 이미지\nassets/items/car-01.png',
+            },
+            {
+              id: 'car-sport',
+              name: '레드라인 스포츠',
+              note: '주차장에 세워두면 사람들이 한 번씩 돌아본다.',
+              price: 145000000,
+              image: 'assets/items/car-02.png',
+              label: '차량 이미지\nassets/items/car-02.png',
+            },
+            {
+              id: 'car-super',
+              name: '블랙 카드 에디션',
+              note: '돈을 증명하는 물건. 운전보다 소유가 목적이다.',
+              price: 690000000,
+              image: 'assets/items/car-03.png',
+              label: '차량 이미지\nassets/items/car-03.png',
+            },
+          ],
+        },
+        estate: {
+          title: '부동산',
+          subtitle: '거주지와 자산을 산다. 가격표가 계급표처럼 보인다.',
+          minCash: 120000000,
+          hero: 'assets/shops/realestate-office.png',
+          heroLabel: '부동산 사무실 일러스트\nassets/shops/realestate-office.png',
+          placeClass: 'p-estate',
+          items: [
+            {
+              id: 'estate-room',
+              name: '역세권 원룸 보증금',
+              note: '방은 작아도 주소가 바뀐다.',
+              price: 65000000,
+              image: 'assets/items/house-01.png',
+              label: '부동산 이미지\nassets/items/house-01.png',
+            },
+            {
+              id: 'estate-apt',
+              name: '외곽 신축 아파트',
+              note: '창밖 풍경이 인생의 설명처럼 붙는다.',
+              price: 420000000,
+              image: 'assets/items/house-02.png',
+              label: '부동산 이미지\nassets/items/house-02.png',
+            },
+            {
+              id: 'estate-building',
+              name: '낡은 상가 건물',
+              note: '월세가 들어오는 순간부터 말투가 바뀐다.',
+              price: 1800000000,
+              image: 'assets/items/house-03.png',
+              label: '부동산 이미지\nassets/items/house-03.png',
+            },
+          ],
+        },
+        dept: {
+          title: '백화점',
+          subtitle: '겉을 산다. 값비싼 물건은 빠르게 익숙해진다.',
+          minCash: 0,
+          hero: 'assets/shops/department-store.png',
+          heroLabel: '백화점 일러스트\nassets/shops/department-store.png',
+          placeClass: 'p-dept',
+          items: [
+            {
+              id: 'lux-suit',
+              name: '맞춤 정장',
+              note: '거울 앞에 서는 시간이 길어진다.',
+              price: 2800000,
+              image: 'assets/items/luxury-01.png',
+              label: '명품 이미지\nassets/items/luxury-01.png',
+            },
+            {
+              id: 'lux-watch',
+              name: '스틸 워치',
+              note: '시간을 보는 척, 가격을 보여준다.',
+              price: 13700000,
+              image: 'assets/items/luxury-02.png',
+              label: '명품 이미지\nassets/items/luxury-02.png',
+            },
+            {
+              id: 'lux-vip',
+              name: 'VIP 라운지 패스',
+              note: '문 하나가 열릴 때, 닫히는 얼굴들도 있다.',
+              price: 62000000,
+              image: 'assets/items/luxury-03.png',
+              label: '명품 이미지\nassets/items/luxury-03.png',
+            },
+          ],
+        },
+      };
+
+      const view = document.getElementById('view');
+      const nav = document.getElementById('nav');
+      const toast = document.getElementById('toast');
+      let toastTimer = null;
+      let state = loadState();
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(SAVE_KEY);
+          if (!raw) return { ...START_STATE, owned: [] };
+          const parsed = JSON.parse(raw);
+          return {
+            ...START_STATE,
+            ...parsed,
+            player: { ...START_STATE.player, ...(parsed.player || {}) },
+            owned: Array.isArray(parsed.owned) ? parsed.owned : [],
+          };
+        } catch (e) {
+          return { ...START_STATE, owned: [] };
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      }
+
+      function won(value) {
+        const n = Number(value || 0);
+        const sign = n < 0 ? '-' : '';
+        return sign + Math.abs(n).toLocaleString('ko-KR') + '원';
+      }
+
+      function compactWon(value) {
+        const n = Number(value || 0);
+        const sign = n < 0 ? '-' : '';
+        const abs = Math.abs(n);
+        if (abs >= 100000000) return sign + Number((abs / 100000000).toFixed(1)).toLocaleString('ko-KR') + '억';
+        if (abs >= 10000) return sign + Math.round(abs / 10000).toLocaleString('ko-KR') + '만원';
+        return won(n);
+      }
+
+      function esc(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        }[ch]));
+      }
+
+      function artSlot(src, label, className = '') {
+        return `<div class="art-slot missing ${className}" data-src="${esc(src)}">
+          <img alt="" data-art>
+          <div class="fallback">${esc(label)}</div>
+        </div>`;
+      }
+
+      function bindArtFallbacks() {
+        if (!USE_IMAGE_FILES) return;
+        view.querySelectorAll('img[data-art]').forEach(img => {
+          const wrap = img.closest('.art-slot');
+          const markMissing = () => wrap.classList.add('missing');
+          const showImage = () => wrap.classList.remove('missing');
+          img.onload = showImage;
+          img.onerror = markMissing;
+          img.src = wrap.dataset.src;
+          if (img.complete && img.naturalWidth === 0) markMissing();
+        });
+      }
+
+      function setNav(screen) {
+        nav.querySelectorAll('button').forEach(button => {
+          button.classList.toggle('on', button.dataset.screen === screen);
+        });
+      }
+
+      function renderTopbar(title, subtitle, options = {}) {
+        const back = options.back ? `<button class="back-btn" data-back="${esc(options.back)}">돌아가기</button>` : '';
+        return `<div class="${options.toolbar ? 'toolbar' : 'topbar'}">
+          ${back || `<div class="screen-title"><b>${esc(title)}</b><span>${esc(subtitle)}</span></div>`}
+          ${back ? `<div class="screen-title"><b>${esc(title)}</b><span>${esc(subtitle)}</span></div>` : ''}
+          <div class="cash-pill">${compactWon(state.cash)}</div>
+        </div>`;
+      }
+
+      function ownedItems() {
+        const byId = new Map();
+        Object.values(shops).forEach(shop => {
+          shop.items.forEach(item => byId.set(item.id, { ...item, shop: shop.title }));
+        });
+        return state.owned.map(id => byId.get(id)).filter(Boolean);
+      }
+
+      function assetValue() {
+        return ownedItems().reduce((sum, item) => sum + item.price, 0);
+      }
+
+      function netWorth() {
+        return state.cash + assetValue();
+      }
+
+      function renderHome() {
+        state.last = 'home';
+        saveState();
+        setNav('home');
+        const assets = ownedItems();
+        view.innerHTML = `
+          ${renderTopbar('307호', '고시원 307호')}
+          <section class="content">
+            <div class="scene">
+              ${artSlot('assets/home/room.png', '방 배경 일러스트\nassets/home/room.png', 'room-bg')}
+              <div class="room-furniture">
+                <div class="window"></div>
+                <div class="door"></div>
+                <div class="bed"></div>
+                <div class="desk"></div>
+                <div class="floor"></div>
+              </div>
+              ${artSlot('assets/home/protagonist.png', '주인공\nassets/home/protagonist.png', 'protagonist')}
+              <div class="hud">
+                <div class="hud-box"><span>이름</span><b>${esc(state.player.name)}</b></div>
+                <div class="hud-box"><span>${state.week}주차</span><b>${compactWon(state.cash)}</b></div>
+              </div>
+              <button class="hotspot primary home-go" data-go-city>밖에 나가기</button>
+              <button class="hotspot home-assets" data-go-assets>보유 자산</button>
+              <button class="hotspot home-next" data-next-chapter>다음 챕터</button>
+            </div>
+
+            <div class="quick-panel">
+              <div class="stat"><span>현재 보유금</span><b>${won(state.cash)}</b></div>
+              <div class="stat"><span>순자산</span><b>${won(netWorth())}</b></div>
+              <div class="stat wide">
+                <span>보유한 것</span>
+                <div class="asset-strip">
+                  ${assets.length ? assets.map(item => `<div class="thumb">${esc(item.name)}</div>`).join('') : '<div class="empty">아직 산 것이 없다. 통장은 조용하고 방은 그대로다.</div>'}
+                </div>
+              </div>
+            </div>
+          </section>`;
+
+        view.querySelector('[data-go-city]').onclick = renderCity;
+        view.querySelector('[data-go-assets]').onclick = renderAssets;
+        view.querySelector('[data-next-chapter]').onclick = () => showToast('프로토타입에서는 다음 챕터 대신 홈 구조만 확인합니다.');
+        bindArtFallbacks();
+      }
+
+      function renderCity() {
+        state.last = 'city';
+        saveState();
+        setNav('city');
+        view.innerHTML = `
+          ${renderTopbar('밖', '쇼윈도와 가격표')}
+          <section class="content">
+            <div class="scene city-scene">
+              ${artSlot('assets/city/map.png', '도시 맵 일러스트\nassets/city/map.png', 'city-bg')}
+              <div class="city-roads"></div>
+              <div class="district d-car"></div>
+              <div class="district d-estate"></div>
+              <div class="district d-dept"></div>
+              ${cityPlace('cars', '스포츠카 매장', '입장 기준 5,000만원')}
+              ${cityPlace('estate', '부동산', '입장 기준 1억 2,000만원')}
+              ${cityPlace('dept', '백화점', '바로 입장 가능')}
+              <button class="hotspot home-next" data-home>방으로 돌아가기</button>
+            </div>
+            <div class="city-bottom">
+              <div class="feed"><b>도시</b><span>큰 유리창마다 가격표가 붙어 있다. 손에 쥔 돈만큼 문이 열린다.</span></div>
+              <div class="feed"><b>현재 순자산</b><span>${won(netWorth())}</span></div>
+            </div>
+          </section>`;
+
+        view.querySelector('[data-home]').onclick = renderHome;
+        view.querySelectorAll('[data-shop]').forEach(button => {
+          button.onclick = () => {
+            const shop = shops[button.dataset.shop];
+            if (!shop) return;
+            if (state.cash < shop.minCash) {
+              showToast(`${shop.title}에 들어가려면 ${won(shop.minCash)} 이상 필요합니다.`);
+              return;
+            }
+            renderShop(button.dataset.shop);
+          };
+        });
+        bindArtFallbacks();
+      }
+
+      function cityPlace(id, title, subtitle) {
+        const shop = shops[id];
+        const locked = state.cash < shop.minCash;
+        return `<button class="city-place ${shop.placeClass} ${locked ? 'locked' : ''}" data-shop="${esc(id)}">
+          <b>${esc(title)}</b><span>${locked ? '잠김 · ' : ''}${esc(subtitle)}</span>
+        </button>`;
+      }
+
+      function renderShop(id) {
+        const shop = shops[id];
+        if (!shop) return renderCity();
+        setNav('city');
+        view.innerHTML = `
+          ${renderTopbar(shop.title, shop.subtitle, { back: 'city', toolbar: true })}
+          <section class="content">
+            <div class="art-slot missing shop-hero" data-src="${esc(shop.hero)}">
+              <img alt="" data-art>
+              <div class="fallback">${esc(shop.heroLabel)}</div>
+              <div class="shop-copy"><strong>${esc(shop.title)}</strong><span>${esc(shop.subtitle)}</span></div>
+            </div>
+            <div class="items">
+              ${shop.items.map(item => itemHTML(item)).join('')}
+            </div>
+          </section>`;
+
+        view.querySelector('[data-back]').onclick = renderCity;
+        view.querySelectorAll('[data-buy]').forEach(button => {
+          button.onclick = () => buyItem(id, button.dataset.buy);
+        });
+        bindArtFallbacks();
+      }
+
+      function itemHTML(item) {
+        const owned = state.owned.includes(item.id);
+        const enough = state.cash >= item.price;
+        const label = owned ? '보유중' : enough ? '구매' : '잠김';
+        return `<article class="item">
+          ${artSlot(item.image, item.label, 'item-art')}
+          <div class="item-body">
+            <div class="item-name">${esc(item.name)}</div>
+            <div class="item-meta">${esc(item.note)}</div>
+            <div class="item-bottom">
+              <span class="price">${won(item.price)}</span>
+              <button class="buy" data-buy="${esc(item.id)}" ${owned || !enough ? 'disabled' : ''}>${label}</button>
+            </div>
+          </div>
+        </article>`;
+      }
+
+      function buyItem(shopId, itemId) {
+        const shop = shops[shopId];
+        const item = shop && shop.items.find(entry => entry.id === itemId);
+        if (!item || state.owned.includes(item.id)) return;
+        if (state.cash < item.price) {
+          showToast('보유금이 부족합니다.');
+          return;
+        }
+        state.cash -= item.price;
+        state.owned.push(item.id);
+        saveState();
+        showToast(`${item.name} 구매 완료`);
+        renderShop(shopId);
+      }
+
+      function renderAssets() {
+        state.last = 'assets';
+        saveState();
+        setNav('assets');
+        const assets = ownedItems();
+        view.innerHTML = `
+          ${renderTopbar('보유 자산', '구매한 물건은 여기에 저장된다')}
+          <section class="content">
+            <div class="quick-panel">
+              <div class="stat"><span>보유금</span><b>${won(state.cash)}</b></div>
+              <div class="stat"><span>자산가치</span><b>${won(assetValue())}</b></div>
+              <div class="stat wide"><span>순자산</span><b>${won(netWorth())}</b></div>
+            </div>
+            <div class="assets-page">
+              ${assets.length ? assets.map(assetRow).join('') : '<div class="feed"><b>비어 있음</b><span>밖으로 나가 상점에서 물건을 구매하면 이곳에 저장됩니다.</span></div>'}
+              <button class="reset" data-reset>프로토타입 저장 초기화</button>
+            </div>
+          </section>`;
+
+        view.querySelector('[data-reset]').onclick = () => {
+          localStorage.removeItem(SAVE_KEY);
+          state = { ...START_STATE, owned: [] };
+          showToast('초기화했습니다.');
+          renderHome();
+        };
+        bindArtFallbacks();
+      }
+
+      function assetRow(item) {
+        return `<article class="asset-row">
+          ${artSlot(item.image, item.label, 'asset-art')}
+          <div class="asset-info">
+            <b>${esc(item.name)}</b>
+            <span>${esc(item.shop)} · ${won(item.price)}</span>
+            <span>${esc(item.note)}</span>
+          </div>
+        </article>`;
+      }
+
+      function showToast(message) {
+        if (toastTimer) clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.classList.add('on');
+        toastTimer = setTimeout(() => toast.classList.remove('on'), 1700);
+      }
+
+      nav.querySelectorAll('button').forEach(button => {
+        button.onclick = () => {
+          const screen = button.dataset.screen;
+          if (screen === 'home') renderHome();
+          if (screen === 'city') renderCity();
+          if (screen === 'assets') renderAssets();
+          if (screen === 'next') showToast('챕터 진행 버튼은 본편 엔진과 연결할 자리입니다.');
+        };
+      });
+
+      function tickClock() {
+        const d = new Date();
+        document.getElementById('clock').textContent =
+          String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      }
+
+      tickClock();
+      setInterval(tickClock, 10000);
+      renderHome();
+    })();
+  </script>
+</body>
+</html>

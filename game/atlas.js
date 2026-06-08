@@ -22,10 +22,22 @@
     return Object.prototype.hasOwnProperty.call(scenes, id);
   }
 
+  const RUNTIME_TARGETS = {
+    w2_contact: ['w2_yumina_text', 'w2_alone'],
+    w3_open: ['w3_date_meet', 'w3_market_arrival'],
+    w3_stock_result: ['w3_result_buy', 'w3_result_skip'],
+    w4_result: ['w4b', 'w4a'],
+    w4a_after: ['w4a_borrow_hesitate', 'w4a_alone'],
+    w4b_after: ['w4b_yumina', 'w4b_alone'],
+  };
+
   // 엔진의 런타임 분기(remapSceneId)를 데이터만으로 흉내: 없는 타겟이면 _plain/_checked 변형을 찾는다.
   function resolveTarget(scenes, id) {
     if (id == null) return { target: id, kind: 'missing' };
     if (sceneExists(scenes, id)) return { target: id, kind: 'ok' };
+    if (RUNTIME_TARGETS[id] && RUNTIME_TARGETS[id].some(v => sceneExists(scenes, v))) {
+      return { target: id, kind: 'runtime' };
+    }
     const variants = [id + '_plain', id + '_checked', id + '_default'];
     const hit = variants.find(v => sceneExists(scenes, v));
     if (hit) return { target: id, kind: 'runtime' }; // 런타임에 갈라지는 가상 타겟
@@ -65,6 +77,9 @@
   function imageModel(image) {
     if (!image) return null;
     if (typeof image === 'string') return { kind: 'file', src: image };
+    if (image && typeof image === 'object' && image.background) {
+      return { kind: 'layered', src: image.background, character: image.character || null };
+    }
     if (image && typeof image === 'object' && image.placeholder) {
       return { kind: 'placeholder', label: image.placeholder };
     }
@@ -130,6 +145,7 @@
         outEdges(scenes, sc).forEach(e => {
           const r = resolveTarget(scenes, e.target);
           const real = r.kind === 'ok' ? e.target
+            : r.kind === 'runtime' && RUNTIME_TARGETS[e.target] ? RUNTIME_TARGETS[e.target].find(v => sceneExists(scenes, v))
             : r.kind === 'runtime' ? (sceneExists(scenes, e.target + '_plain') ? e.target + '_plain' : e.target + '_checked')
             : null;
           if (real && sceneExists(scenes, real) && !reached.has(real)) {

@@ -206,6 +206,56 @@ body.preview-mode #app {
   object-fit: contain;
 }
 
+.scene-img.layered-art {
+  background: #101216;
+}
+
+.scene-img.layered-art::after {
+  z-index: 4;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.08) 48%, rgba(0, 0, 0, 0.56) 100%),
+    radial-gradient(circle at 50% 36%, transparent 0 48%, rgba(0, 0, 0, 0.36) 100%);
+}
+
+.scene-img.layered-art .scene-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--scene-bg-position, center);
+  transform: scale(var(--scene-bg-scale, 1));
+}
+
+.scene-img.layered-art .scene-character {
+  position: absolute;
+  z-index: 3;
+  left: var(--character-left, 50%);
+  bottom: var(--character-bottom, -4%);
+  width: var(--character-width, 48%);
+  max-height: var(--character-max-height, 92%);
+  height: auto;
+  object-fit: contain;
+  opacity: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.42));
+  transform: translateX(-50%) translateY(var(--character-shift-y, 0));
+  transition:
+    opacity 0.62s ease,
+    transform 0.62s ease;
+}
+
+.scene-img.layered-art.reveal-character .scene-character {
+  opacity: 0;
+  transform: translateX(-50%) translateY(22px);
+}
+
+.scene-img.layered-art.reveal-character.character-shown .scene-character {
+  opacity: 1;
+  transform: translateX(-50%) translateY(var(--character-shift-y, 0));
+}
+
 .ph {
   position: relative;
   z-index: 1;
@@ -267,6 +317,20 @@ body.preview-mode #app {
   flex-direction: column;
   gap: 10px;
   box-shadow: 0 -18px 34px rgba(0, 0, 0, 0.24);
+}
+
+.scene-text-delayed {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: sceneTextIn 0.42s ease forwards;
+  animation-delay: var(--text-delay, 420ms);
+}
+
+@keyframes sceneTextIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .scene-text-choice-only {

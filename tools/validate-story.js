@@ -24,7 +24,26 @@ const GAME_DIR = path.join(__dirname, '..', 'game');
 const SCENES_FILE = path.join(GAME_DIR, 'data', 'scenes.js');
 
 // phone.js 가 실제로 그릴 수 있는 화면. 새 화면 추가하면 여기도 같이 갱신.
-const SUPPORTED_PHONE_SCREENS = ['ringing', 'missed', 'recents', 'messages'];
+const SUPPORTED_PHONE_SCREENS = [
+  'ringing', 'missed', 'recents', 'messages',
+  'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult',
+];
+
+// engine.js remapSceneId 가 플래그로 갈아끼우는 "가상 허브 id" → 실제 도착 후보들.
+// 씬 데이터는 허브 id로 next 를 걸고, 엔진이 진입 시점에 실제 씬으로 바꾼다.
+// 여기 등록해 두면 검증기가 허브를 "존재하는 씬"으로 보고, 도착 후보들을 referenced 처리한다.
+// 엔진 remap 을 고치면 이 표도 같이 갱신할 것.
+const REMAP_HUBS = {
+  w1_walk_to_stop: ['w1_walk_to_stop_plain', 'w1_walk_to_stop_checked'],
+  w1_busstop: ['w1_busstop_plain', 'w1_busstop_checked'],
+  w1_hunt_fail: ['w1_hunt_fail_plain'],
+  w2_contact: ['w2_yumina_text', 'w2_alone'],
+  w3_open: ['w3_date_meet', 'w3_market_arrival'],
+  w3_stock_result: ['w3_result_battery', 'w3_result_bio', 'w3_result_loss', 'w3_result_skip'],
+  w4_result: ['w4a', 'w4b'],
+  w4a_after: ['w4a_borrow_hesitate', 'w4a_alone'],
+  w4b_after: ['w4b_yumina', 'w4b_alone'],
+};
 
 // engine.js applyEffects 가 실제로 읽는 키. 오타 잡이용.
 const EFFECT_KEYS = [
@@ -32,6 +51,7 @@ const EFFECT_KEYS = [
   'flag', 'flags', 'affection', 'economy', 'unlock',
   'anger', 'rage', 'meters',
   'setCash', 'setDebt', 'setAssets', 'setAnger', 'startingCash',
+  'stockBuyAll', 'stockSkip', 'stockResult',
 ];
 
 // 종료형(다음 씬이 없어도 정상인) 타입
@@ -79,6 +99,12 @@ function validate(story) {
   const idSet = new Set(ids);
   const albumIds = new Set((story.album || []).map(a => a.id));
   const referenced = new Set();
+
+  // 가상 허브 id 는 "존재하는 next 대상"으로 인정하고, 실제 도착 후보는 referenced 로 등록.
+  for (const hub of Object.keys(REMAP_HUBS)) {
+    idSet.add(hub);
+    for (const target of REMAP_HUBS[hub]) referenced.add(target);
+  }
 
   // 1) start
   if (!story.start) err('story.start 가 없음');

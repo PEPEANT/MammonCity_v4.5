@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>배금도시 - 주식앱 V1 프로토타입</title>
+<style>
+  :root{
+    --bg:#08090b; --coal:#0f1114; --line:rgba(245,239,226,.14); --gold:#d8b45d;
+    --red:#e23b30; --blue:#2f6fe0; --paper:#f5efe2; --muted:#8a9099;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+  body{min-height:100dvh; padding:14px; display:flex; flex-direction:column; align-items:center; gap:10px;
+    background:radial-gradient(circle at 50% 0%,rgba(216,180,93,.10),transparent 30%),var(--bg);
+    color:var(--paper); font-family:"Gothic A1",system-ui,sans-serif}
+  .cap{max-width:400px; color:#9a9384; font-size:12px; line-height:1.45; text-align:center}
+  .cap b{color:var(--gold)}
+  .phone{width:100%; max-width:400px; height:780px; max-height:90dvh; display:flex; flex-direction:column;
+    overflow:hidden; border:1px solid var(--line); border-radius:26px; background:var(--coal);
+    box-shadow:0 24px 70px rgba(0,0,0,.6)}
+  .status{height:28px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px; background:#0b0c0e; color:#cfc7bb; font-size:11px; font-weight:800}
+  .screen{position:relative; flex:1 1 auto; min-height:0; overflow:hidden}
+  .view{position:absolute; inset:0; display:none; flex-direction:column}
+  .view.on{display:flex; animation:fade .24s ease}
+  @keyframes fade{from{opacity:0; transform:translateX(12px)} to{opacity:1; transform:none}}
+
+  .market,.order,.filled,.result{background:#fbfbfd; color:#16181c}
+  .appbar{height:39px; flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:0 14px;
+    border-bottom:1px solid #eceef2; background:#fff}
+  .logo{width:18px; height:18px; border-radius:5px; background:linear-gradient(135deg,#e23b30,#b21c12)}
+  .appname{font-size:13px; font-weight:900}
+  .account{margin-left:auto; color:#8a9099; font-size:11px; font-weight:800}
+  .head{padding:12px 16px 5px; background:#fff}
+  .name{font-size:18px; font-weight:900}
+  .code{margin-left:6px; color:#9aa0a8; font-size:11px; font-weight:800}
+  .price-row{display:flex; align-items:flex-end; justify-content:space-between; margin-top:2px}
+  .price{font-size:31px; font-weight:900}
+  .change{font-size:14px; font-weight:900; text-align:right}
+  .up{color:var(--red)} .down{color:var(--blue)}
+  .sub{margin-top:2px; color:#9aa0a8; font-size:11px; font-weight:800}
+  .chartbox{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; background:#fff}
+  .candles{position:relative; flex:1 1 auto; min-height:0}
+  .rsi{height:82px; flex:0 0 auto; position:relative; border-top:1px solid #eceef2}
+  .rsi span{position:absolute; left:10px; top:5px; z-index:2; color:#7a5af8; font-size:10px; font-weight:900}
+  canvas{display:block; width:100%; height:100%}
+  .live{position:absolute; right:12px; top:8px; z-index:2; color:var(--red); font-size:10px; font-weight:900}
+  .hold{display:flex; justify-content:space-between; gap:8px; padding:9px 16px;
+    border-top:1px solid #eceef2; background:#f4f5f7; color:#8a9099; font-size:12px; font-weight:800}
+  .hold b{color:#16181c}
+  .turnbar{flex:0 0 auto; padding:10px 12px; border-top:1px solid #eceef2; background:#fff}
+  .turn-btn{width:100%; min-height:50px; border:0; border-radius:12px; background:#16181c;
+    color:#fff; font:inherit; font-size:15px; font-weight:900}
+  .turn-btn:active{opacity:.85}
+  .hint{margin-top:6px; color:#9aa0a8; font-size:11px; font-weight:800; text-align:center}
+
+  .community{background:#eef0f3; color:#1a1c20}
+  .cbar{height:42px; flex:0 0 auto; display:flex; align-items:center; padding:0 14px;
+    border-bottom:1px solid #e2e5ea; background:#fff}
+  .cbar b{font-size:14px}
+  .cbar span{margin-left:auto; color:var(--red); font-size:10px; font-weight:900}
+  .feed{position:relative; flex:1 1 auto; min-height:0; overflow:hidden;
+    -webkit-mask-image:linear-gradient(180deg,transparent,#000 7%,#000 92%,transparent);
+            mask-image:linear-gradient(180deg,transparent,#000 7%,#000 92%,transparent)}
+  .track{position:absolute; inset:0 0 auto; display:flex; flex-direction:column; gap:8px; padding:12px;
+    animation:feedScroll 24s linear infinite}
+  @keyframes feedScroll{from{transform:translateY(0)} to{transform:translateY(-50%)}}
+  .post{padding:9px 11px; border:1px solid #e2e5ea; border-radius:10px; background:#fff}
+  .post .u{color:#444; font-size:12px; font-weight:900}
+  .post .t{margin-top:3px; color:#23262b; font-size:14px; line-height:1.4; word-break:keep-all}
+  .post .m{margin-top:5px; color:#9aa0a8; font-size:10px; font-weight:800}
+  .post.hot{border-color:rgba(226,59,48,.4)} .post.hot .u,.post.hot .m b{color:#c62b20}
+  .post.down{border-color:rgba(47,111,224,.4)} .post.down .u{color:#2f6fe0}
+
+  .panel{flex:1 1 auto; min-height:0; padding:18px 16px; background:#fff}
+  .label{color:#8a9099; font-size:11px; font-weight:900}
+  .big{margin-top:3px; color:#16181c; font-size:28px; font-weight:900}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px}
+  .cell{padding:11px; border:1px solid #eceef2; border-radius:10px; background:#f7f8fa}
+  .cell span{display:block; color:#8a9099; font-size:10px; font-weight:900}
+  .cell b{display:block; margin-top:3px; color:#16181c; font-size:14px; font-weight:900}
+  .desc{margin-top:14px; color:#343840; font-size:14px; line-height:1.55; font-weight:800; white-space:pre-line; word-break:keep-all}
+  .choices{display:flex; flex-direction:column; gap:9px; margin-top:16px}
+  .choices button{min-height:48px; border:1px solid rgba(22,24,28,.15); border-left:3px solid #16181c;
+    background:#fff; color:#16181c; font:inherit; font-size:15px; font-weight:900; text-align:left; padding:12px 14px}
+  .choices button:active{background:#f1f3f6}
+  .filled-mark{height:86px; display:flex; align-items:center; justify-content:center; margin:8px 0 12px;
+    border-radius:14px; background:#f4f5f7; color:var(--red); font-size:18px; font-weight:900}
+  .result .big,.result .gain{color:var(--red)}
+</style>
+</head>
+<body>
+  <div class="cap">배금도시 - <b>주식앱 V1 프로토타입</b><br>2주차는 매수/포기까지만. 결과는 3주차 첫날에 표시.</div>
+
+  <div class="phone">
+    <div class="status"><span id="clock">9:01</span><span>LTE 41%</span></div>
+    <div class="screen">
+      <div class="view market on" data-step="0">
+        <div class="appbar"><span class="logo"></span><span class="appname">배금증권</span><span class="account">내 계좌</span></div>
+        <div class="head">
+          <div class="name">배금전자 <span class="code">001457</span></div>
+          <div class="price-row"><div class="price up" id="price">-</div><div class="change up" id="chg">-</div></div>
+          <div class="sub">거래량 증가</div>
+        </div>
+        <div class="chartbox">
+          <div class="candles"><div class="live">LIVE</div><canvas id="cChart"></canvas></div>
+          <div class="rsi"><span>RSI(14)</span><canvas id="cRsi"></canvas></div>
+        </div>
+        <div class="hold"><span>보유 <b>0주</b></span><span>평가손익 <b>0원</b></span><span>예수금 <b data-cash>0원</b></span></div>
+        <div class="turnbar"><button class="turn-btn" data-next="1">종목토론방 보기</button><div class="hint">화면을 넘겼다.</div></div>
+      </div>
+
+      <div class="view community" data-step="1">
+        <div class="cbar"><b>배금전자 종목토론방</b><span>실시간</span></div>
+        <div class="feed"><div class="track" id="track"></div></div>
+        <div class="turnbar"><button class="turn-btn" data-next="2">주문창 열기</button><div class="hint">글 목록이 계속 올라갔다.</div></div>
+      </div>
+
+      <div class="view order" data-step="2">
+        <div class="appbar"><span class="logo"></span><span class="appname">매수 주문</span><span class="account">시장가</span></div>
+        <div class="panel">
+          <div class="label">매수 가능 금액</div>
+          <div class="big" data-cash>0원</div>
+          <div class="grid">
+            <div class="cell"><span>현재가</span><b data-buy-price>0원</b></div>
+            <div class="cell"><span>가능 수량</span><b data-shares>0주</b></div>
+            <div class="cell"><span>주문 금액</span><b data-invested>0원</b></div>
+            <div class="cell"><span>남은 예수금</span><b data-leftover>0원</b></div>
+          </div>
+          <div class="desc">주문창이 열렸다.
+보유 현금 전부로 주문 금액이 채워졌다.</div>
+          <div class="choices">
+            <button data-act="buy">매수하기</button>
+            <button data-act="skip">포기하기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="view filled" data-step="3">
+        <div class="appbar"><span class="logo"></span><span class="appname">체결 내역</span><span class="account">2주차</span></div>
+        <div class="panel">
+          <div class="filled-mark">매수 체결</div>
+          <div class="grid">
+            <div class="cell"><span>종목</span><b>배금전자</b></div>
+            <div class="cell"><span>체결가</span><b data-buy-price>0원</b></div>
+            <div class="cell"><span>체결 수량</span><b data-shares>0주</b></div>
+            <div class="cell"><span>남은 예수금</span><b data-leftover>0원</b></div>
+          </div>
+          <div class="desc">확인 버튼을 눌렀다.
+체결 알림이 화면 위에 내려왔다.</div>
+        </div>
+        <div class="turnbar"><button class="turn-btn" data-next="4">3주차 첫날</button><div class="hint">결과는 다음 주에 표시된다.</div></div>
+      </div>
+
+      <div class="view filled" data-step="5">
+        <div class="appbar"><span class="logo"></span><span class="appname">주문 취소</span><span class="account">2주차</span></div>
+        <div class="panel">
+          <div class="filled-mark" style="color:#16181c">앱 닫힘</div>
+          <div class="desc">주문창을 닫았다.
+예수금은 그대로 남았다.</div>
+        </div>
+        <div class="turnbar"><button class="turn-btn" data-next="6">3주차 첫날</button><div class="hint">다음 화면에서 가격이 갱신된다.</div></div>
+      </div>
+
+      <div class="view result" data-step="4">
+        <div class="appbar"><span class="logo"></span><span class="appname">평가손익</span><span class="account">3주차</span></div>
+        <div class="panel">
+          <div class="label">평가손익</div>
+          <div class="big gain" data-profit>+0원</div>
+          <div class="grid">
+            <div class="cell"><span>보유 수량</span><b data-shares>0주</b></div>
+            <div class="cell"><span>평가금액</span><b data-result-value>0원</b></div>
+            <div class="cell"><span>수익률</span><b class="gain">+100%</b></div>
+            <div class="cell"><span>예수금</span><b data-leftover>0원</b></div>
+          </div>
+          <div class="desc">3주차 첫날, 평가손익 숫자가 빨갛게 표시됐다.
+잔고 화면이 그대로 켜져 있었다.</div>
+        </div>
+      </div>
+
+      <div class="view result" data-step="6">
+        <div class="appbar"><span class="logo"></span><span class="appname">가격 알림</span><span class="account">3주차</span></div>
+        <div class="panel">
+          <div class="label">보유 수량</div>
+          <div class="big">0주</div>
+          <div class="grid">
+            <div class="cell"><span>예수금</span><b data-cash>0원</b></div>
+            <div class="cell"><span>현재가</span><b data-result-price>0원</b></div>
+            <div class="cell"><span>놓친 평가손익</span><b class="gain" data-missed>+0원</b></div>
+            <div class="cell"><span>수익률</span><b class="gain">+100%</b></div>
+          </div>
+          <div class="desc">급등 알림이 떴다.
+보유 수량은 0주로 표시됐다.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const cashStart = Math.max(0, Number(params.get('cash') || 300000));
+  const buyPrice = Math.max(1, Number(params.get('buyPrice') || 72000));
+  const resultPrice = buyPrice * 2;
+  let cash = cashStart;
+  let bought = false;
+  let shares = Math.floor(cashStart / buyPrice);
+  let invested = shares * buyPrice;
+  let leftover = cashStart - invested;
+  let resultValue = shares * resultPrice;
+  let profit = resultValue + leftover - cashStart;
+
+  const won = n => `${n < 0 ? '-' : ''}${Math.abs(Math.round(n)).toLocaleString('ko-KR')}원`;
+  const signedWon = n => `${n >= 0 ? '+' : '-'}${Math.abs(Math.round(n)).toLocaleString('ko-KR')}원`;
+
+  function setText(sel, value) {
+    document.querySelectorAll(sel).forEach(el => { el.textContent = value; });
+  }
+
+  function refreshMoney() {
+    shares = Math.floor(cashStart / buyPrice);
+    invested = shares * buyPrice;
+    leftover = cashStart - invested;
+    resultValue = shares * resultPrice;
+    profit = resultValue + leftover - cashStart;
+    setText('[data-cash]', won(cash));
+    setText('[data-buy-price]', won(buyPrice));
+    setText('[data-result-price]', won(resultPrice));
+    setText('[data-shares]', `${shares.toLocaleString('ko-KR')}주`);
+    setText('[data-invested]', won(invested));
+    setText('[data-leftover]', won(bought ? leftover : cashStart - invested));
+    setText('[data-result-value]', won(resultValue));
+    setText('[data-profit]', signedWon(profit));
+    setText('[data-missed]', signedWon(profit));
+  }
+
+  function gen(n) {
+    let p = 56000;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const hype = i > n * 0.55 ? 1 : 0;
+      const bias = 0.04 + 0.26 * hype;
+      const vol = 680 + hype * 620;
+      const c = Math.max(20000, p + (Math.random() - 0.5 + bias) * vol * 2);
+      const wick = vol * (0.55 + Math.random());
+      out.push({
+        o: Math.round(p),
+        h: Math.round(Math.max(p, c) + Math.random() * wick),
+        l: Math.round(Math.min(p, c) - Math.random() * wick),
+        c: Math.round(c),
+      });
+      p = c;
+    }
+    out[out.length - 1].c = buyPrice;
+    return out;
+  }
+
+  const K = gen(30);
+  const base = K[0].c;
+
+  function setupCanvas(cv) {
+    const r = cv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, W: r.width, H: r.height };
+  }
+
+  function drawChart() {
+    const { ctx, W, H } = setupCanvas(document.getElementById('cChart'));
+    ctx.clearRect(0, 0, W, H);
+    const padL = 6, padR = 60, padT = 8, padB = 6;
+    const cw = W - padL - padR, ch = H - padT - padB;
+    let hi = -Infinity, lo = Infinity;
+    K.forEach(k => { hi = Math.max(hi, k.h); lo = Math.min(lo, k.l); });
+    const pd = (hi - lo) * 0.08; hi += pd; lo -= pd;
+    const y = v => padT + (hi - v) / (hi - lo) * ch;
+    ctx.font = '10px system-ui'; ctx.textBaseline = 'middle';
+    for (let g = 0; g <= 4; g++) {
+      const v = hi - (hi - lo) * g / 4, yy = y(v);
+      ctx.strokeStyle = '#eef0f3'; ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(padL + cw, yy); ctx.stroke();
+      ctx.fillStyle = '#aab0b8'; ctx.fillText(Math.round(v).toLocaleString('ko-KR'), padL + cw + 6, yy);
+    }
+    const step = cw / K.length, bw = Math.max(2, step * 0.62);
+    K.forEach((k, i) => {
+      const cx = padL + step * i + step / 2;
+      const up = k.c >= k.o, col = up ? '#e23b30' : '#2f6fe0';
+      ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(Math.round(cx) + .5, y(k.h)); ctx.lineTo(Math.round(cx) + .5, y(k.l)); ctx.stroke();
+      const yo = y(k.o), yc = y(k.c), top = Math.min(yo, yc), bh = Math.max(2, Math.abs(yc - yo));
+      ctx.fillStyle = col; ctx.fillRect(cx - bw / 2, top, bw, bh);
+    });
+    const last = K[K.length - 1].c, yy = y(last);
+    ctx.strokeStyle = '#d8b45d'; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(padL + cw, yy); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#d8b45d'; ctx.fillRect(padL + cw, yy - 8, padR - 6, 16);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px system-ui'; ctx.fillText(last.toLocaleString('ko-KR'), padL + cw + 5, yy);
+    document.getElementById('price').textContent = won(last).replace('원', '');
+    document.getElementById('chg').textContent = `▲ +${(((last - base) / base) * 100).toFixed(2)}%`;
+  }
+
+  function drawRsi() {
+    const { ctx, W, H } = setupCanvas(document.getElementById('cRsi'));
+    ctx.clearRect(0, 0, W, H);
+    const padL = 6, padR = 60, padT = 6, padB = 6;
+    const cw = W - padL - padR, ch = H - padT - padB;
+    const y = v => padT + (100 - v) / 100 * ch;
+    [70, 30].forEach(v => {
+      const yy = y(v);
+      ctx.strokeStyle = v === 70 ? '#e8b4ae' : '#a9c1ec';
+      ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(padL + cw, yy); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#bbb'; ctx.font = '9px system-ui'; ctx.fillText(v, padL + cw + 6, yy);
+    });
+    ctx.strokeStyle = '#7a5af8'; ctx.lineWidth = 1.6; ctx.beginPath();
+    K.forEach((_, i) => {
+      const x = padL + (cw / K.length) * i + (cw / K.length) / 2;
+      const yy = y(48 + Math.min(38, i * 1.6));
+      if (i === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+    });
+    ctx.stroke();
+  }
+
+  const posts = [
+    ['hot','불개미','오늘 장 끝까지 봐라. 거래량 붙었다.',142],
+    ['','존버맨','시초에 못 산 사람들 계속 쳐다만 봄.',88],
+    ['down','물린사람','위에서 잡았는데 아직 안 팔았다.',31],
+    ['hot','호가창','매도벽 먹는 중. 숫자 봐라.',166],
+    ['','신용계좌','가능금액 전부 걸었다.',77],
+    ['hot','한방','방금 시장가로 들어갔다.',120],
+  ];
+  const html = posts.concat(posts).map(p =>
+    `<div class="post ${p[0]}"><div class="u">${p[1]}</div><div class="t">${p[2]}</div><div class="m"><b>추천 ${p[3]}</b> · 방금</div></div>`
+  ).join('');
+  document.getElementById('track').innerHTML = html;
+
+  function goStep(step) {
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', Number(v.dataset.step) === step));
+  }
+
+  document.querySelectorAll('[data-next]').forEach(btn => btn.onclick = () => goStep(Number(btn.dataset.next)));
+  document.querySelector('[data-act="buy"]').onclick = () => {
+    bought = shares > 0;
+    cash = bought ? leftover : cashStart;
+    refreshMoney();
+    goStep(bought ? 3 : 5);
+  };
+  document.querySelector('[data-act="skip"]').onclick = () => {
+    bought = false;
+    cash = cashStart;
+    refreshMoney();
+    goStep(5);
+  };
+
+  function clock() {
+    const d = new Date();
+    document.getElementById('clock').textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  window.addEventListener('resize', () => { drawChart(); drawRsi(); });
+  refreshMoney();
+  drawChart();
+  drawRsi();
+  clock();
+  setInterval(clock, 10000);
+})();
+</script>
+</body>
+</html>

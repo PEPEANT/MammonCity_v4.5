@@ -1,4 +1,6 @@
 .playwright-mcp/
+00_context-room/
+reference/
 node_modules/
 dist/
 build/
@@ -8,3 +10,4 @@ build/
 *.tmp
 game/preview-atlas*.png
 game/preview-atlas-notes.png
+_backups/

@@ -35,6 +35,7 @@ if (PREVIEW_MODE) {
 els.stage.addEventListener('phone:action', handlePhoneAction);
 
 let state = initialState();
+let renderToken = 0;
 
 function newGame() {
   return {
@@ -135,12 +136,32 @@ function setScene(id) {
 }
 
 function remapSceneId(id, target = state) {
-  if (id === 'w1_busstop') {
-    return target && target.flags && target.flags.appearance === 'checked'
-      ? 'w1_busstop_checked'
-      : 'w1_busstop_plain';
-  }
+  const flags = (target && target.flags) || {};
+  const checked = flags.appearance === 'checked';
+  const metYumina = !!flags.met_yumina;
+
+  // 외형(거울에서 다듬었는가) → 거리/정류장 분기
+  if (id === 'w1_walk_to_stop') return checked ? 'w1_walk_to_stop_checked' : 'w1_walk_to_stop_plain';
+  if (id === 'w1_busstop') return checked ? 'w1_busstop_checked' : 'w1_busstop_plain';
   if (id === 'w1_hunt_fail') return 'w1_hunt_fail_plain';
+
+  // 유민아를 만났는가 → 2·3주차, 4주차 후반 분기
+  if (id === 'w2_contact') return metYumina ? 'w2_yumina_text' : 'w2_alone';
+  if (id === 'w3_open') return metYumina ? 'w3_date_meet' : 'w3_market_arrival';
+  if (id === 'w4a_after') return metYumina ? 'w4a_borrow_hesitate' : 'w4a_alone';
+  if (id === 'w4b_after') return metYumina ? 'w4b_yumina' : 'w4b_alone';
+
+  // 3주차 첫날: 어떤 종목을 샀는지로 결과 화면 분기 (손실 종목은 내러티브로 — 앱 상승화면 회피)
+  if (id === 'w3_stock_result') {
+    if (flags.stock_pick === 'battery') return 'w3_result_battery'; // 조용한 정답(대박)
+    if (flags.stock_pick === 'bio') return 'w3_result_bio';         // 무난(소폭)
+    if (flags.stock_pick === 'samsung') return 'w3_result_loss';    // 종토방 함정(손실)
+    return 'w3_result_skip';                                        // 미매수
+  }
+
+  // 4주차 결과: 수익이 났으면 생존, 손실/미매수면 붕괴.
+  if (id === 'w4_result') return (Number(flags.stock_profit) > 0 || flags.temperance) ? 'w4b' : 'w4a';
+
   return id;
 }
 
@@ -250,11 +271,50 @@ function relationLabel(key) {
 }
 
 /* ---------- 이미지 칸 그리기 (실제 파일 or placeholder) ---------- */
+function isLayeredImage(img) {
+  return !!(img && typeof img === 'object' && img.background);
+}
+
+function stagedImageTextDelay(img) {
+  if (!isLayeredImage(img)) return 0;
+  return Number(img.textDelay ?? 420);
+}
+
+function cssVar(name, value) {
+  return value == null ? '' : `--${name}:${escapeHTML(value)}`;
+}
+
 function imageBlock(img) {
-  // img 가 문자열이면 실제 파일 경로, 객체면 {placeholder:'설명'}
+  // img 가 문자열이면 실제 파일 경로, 객체면 {placeholder:'설명'} 또는 레이어 이미지.
   if (typeof img === 'string') {
     return `<div class="scene-img has-art" style="--scene-art:url('${escapeHTML(img)}')">
       <img src="${escapeHTML(img)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + img)}">
+    </div>`;
+  }
+  if (isLayeredImage(img)) {
+    const character = img.character || null;
+    const classes = ['scene-img', 'has-art', 'layered-art'];
+    if (character && img.revealCharacter !== false) classes.push('reveal-character');
+    if (character && img.revealCharacter === false) classes.push('character-shown');
+
+    const style = [
+      `--scene-art:url('${escapeHTML(img.background)}')`,
+      cssVar('scene-bg-position', img.backgroundPosition),
+      cssVar('scene-bg-scale', img.backgroundScale),
+      cssVar('character-left', img.characterLeft),
+      cssVar('character-bottom', img.characterBottom),
+      cssVar('character-width', img.characterWidth),
+      cssVar('character-max-height', img.characterMaxHeight),
+      cssVar('character-shift-y', img.characterShiftY),
+    ].filter(Boolean).join(';');
+    const delay = Number(img.characterDelay ?? 180);
+    const characterHTML = character
+      ? `<img class="scene-character" src="${escapeHTML(character)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + character)}">`
+      : '';
+
+    return `<div class="${classes.join(' ')}" style="${style}" data-character-delay="${escapeHTML(delay)}">
+      <img class="scene-bg" src="${escapeHTML(img.background)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + img.background)}">
+      ${characterHTML}
     </div>`;
   }
   if (img && img.placeholder) {
@@ -277,6 +337,7 @@ function phHTML(label) {
 
 /* ================= 렌더러 ================= */
 function render() {
+  renderToken += 1;
   const sc = story.scenes[currentScene()];
   if (!sc) {
     els.stage.innerHTML = `<div class="card-screen"><div class="card-sub">씬을 찾을 수 없음: ${currentScene()}</div></div>`;
@@ -296,7 +357,7 @@ function render() {
   }[type] || renderScene)(sc);
 
   bindImageFallbacks();
-  if (window.PhoneWidget) PhoneWidget.bind(els.stage, sc);
+  if (window.PhoneWidget) PhoneWidget.bind(els.stage, sc, state);
 
   const mapBtn = els.hdr.querySelector('[data-act="map"]');
   if (mapBtn) mapBtn.onclick = () => { save(); openMapOverlay(); };
@@ -310,7 +371,7 @@ function renderHeader(sc) {
   }
 
   const type = sc.type || 'scene';
-  if (type === 'title' || type === 'create' || type === 'album') {
+  if (type === 'title' || type === 'create' || type === 'album' || sc.hideStats) {
     els.hdr.textContent = title;
     return;
   }
@@ -427,8 +488,11 @@ function renderScene(sc) {
   }
 
   const hasTextBox = !!(sc.speaker || sc.text || bottom);
+  const textDelay = stagedImageTextDelay(sc.image);
+  const textClass = textDelay ? 'scene-text scene-text-delayed' : 'scene-text';
+  const textStyle = textDelay ? ` style="--text-delay:${textDelay}ms"` : '';
   const textBox = hasTextBox ? `
-    <div class="scene-text">
+    <div class="${textClass}"${textStyle}>
       ${sc.speaker ? `<div class="speaker">${fill(sc.speaker)}${relSpan}</div>` : ''}
       <div class="dialogue">${fill(sc.text || '')}</div>
       ${bottom}
@@ -438,7 +502,7 @@ function renderScene(sc) {
     ${imageBlock(sc.image)}
     ${textBox}`;
 
-  const flow = bindDialogueFlow(sc, choices.length > 0);
+  const flow = bindDialogueFlow(sc, choices.length > 0, renderToken);
 
   if (choices.length) {
     els.stage.querySelectorAll('.choice-btn').forEach(btn => {
@@ -468,7 +532,7 @@ function renderScene(sc) {
   }
 }
 
-function bindDialogueFlow(sc, hasChoices = false) {
+function bindDialogueFlow(sc, hasChoices = false, token = renderToken) {
   const dialogue = els.stage.querySelector('.dialogue');
   const choices = els.stage.querySelector('.choices');
   const hint = els.stage.querySelector('.tap-hint');
@@ -492,6 +556,7 @@ function bindDialogueFlow(sc, hasChoices = false) {
     }
     done = true;
     revealAfterText();
+    revealSceneCharacter(token);
   }
 
   function showChoicePage() {
@@ -506,6 +571,7 @@ function bindDialogueFlow(sc, hasChoices = false) {
 
   if (!shouldType) {
     revealAfterText();
+    revealSceneCharacter(token);
     return { isDone: () => true, isChoicePage: () => choicePage, finish, showChoicePage };
   }
 
@@ -524,8 +590,24 @@ function bindDialogueFlow(sc, hasChoices = false) {
     timer = setTimeout(step, pause);
   }
 
-  timer = setTimeout(step, Number(sc.typeDelay || 120));
+  const textDelay = stagedImageTextDelay(sc.image);
+  const startDelay = Number(sc.typeDelay ?? (textDelay ? textDelay + 160 : 120));
+  timer = setTimeout(step, startDelay);
   return { isDone: () => done, isChoicePage: () => choicePage, finish, showChoicePage };
+}
+
+function revealSceneCharacter(token) {
+  const layer = els.stage.querySelector('.scene-img.reveal-character');
+  if (!layer || layer.classList.contains('character-shown') || layer.dataset.characterRevealQueued) return;
+  layer.dataset.characterRevealQueued = '1';
+
+  const show = () => {
+    if (token !== renderToken) return;
+    layer.classList.add('character-shown');
+  };
+  const delay = Number(layer.dataset.characterDelay || 0);
+  if (delay > 0) window.setTimeout(show, delay);
+  else show();
 }
 
 function visibleChoices(sc) {
@@ -656,10 +738,12 @@ function commitTransition(node, options = {}) {
   if (turnDelta) state.progress.turn += turnDelta;
 
   setScene(node.next);
-  applyEffects(story.scenes[node.next]);
+  // node.next 는 가상 허브일 수 있으므로, remap 된 실제 도착 씬의 효과를 적용한다.
+  const arrived = currentScene();
+  applyEffects(story.scenes[arrived]);
   recordHistory({
     from,
-    next: node.next,
+    next: arrived,
     label: node.label || '',
     turnDelta,
   });
@@ -698,6 +782,9 @@ function applyEffects(node) {
   if (effects.affection) applyAffection(effects.affection);
   if (effects.flag) applyFlags(effects.flag);
   if (effects.flags) applyFlags(effects.flags);
+  if (effects.stockSkip) applyStockSkip(effects.stockSkip);
+  if (effects.stockBuyAll) applyStockBuyAll(effects.stockBuyAll);
+  if (effects.stockResult) applyStockResult(effects.stockResult);
 
   applyEconomyDelta('cash', effects.cash);
   applyEconomyDelta('debt', effects.debt);
@@ -726,6 +813,94 @@ function applyEffects(node) {
 
   unlock(node.unlock);
   unlock(effects.unlock);
+}
+
+function stockParams(cfg = {}) {
+  const buyPrice = Math.max(1, Number(cfg.buyPrice || 72000));
+  const resultMultiplier = Math.max(0, Number(cfg.resultMultiplier || 2));
+  return {
+    buyPrice,
+    resultPrice: Math.round(buyPrice * resultMultiplier),
+    resultMultiplier,
+    symbol: cfg.symbol || '배금전자',
+  };
+}
+
+function applyStockBuyAll(cfg = {}) {
+  const params = stockParams(cfg);
+  const startCash = Math.max(0, Number(state.economy.cash || 0));
+  const shares = Math.floor(startCash / params.buyPrice);
+
+  if (shares <= 0) {
+    applyFlags({
+      stock_buy_failed: true,
+      stock_bought: false,
+      stock_buy_price: params.buyPrice,
+      stock_start_cash: startCash,
+    });
+    return;
+  }
+
+  const invested = shares * params.buyPrice;
+  const leftover = startCash - invested;
+  const resultValue = shares * params.resultPrice;
+  const profit = resultValue + leftover - startCash;
+  const returnRate = invested > 0
+    ? Math.round(((params.resultPrice - params.buyPrice) / params.buyPrice) * 100)
+    : 0;
+
+  state.economy.cash = leftover;
+  applyEconomyDelta('assets', invested);
+  applyFlags({
+    stock_bought: true,
+    stock_skipped: false,
+    stock_symbol: params.symbol,
+    stock_buy_price: params.buyPrice,
+    stock_result_price: params.resultPrice,
+    stock_result_multiplier: params.resultMultiplier,
+    stock_start_cash: startCash,
+    stock_shares: shares,
+    stock_invested: invested,
+    stock_leftover: leftover,
+    stock_result_value: resultValue,
+    stock_profit: profit,
+    stock_return_rate: returnRate,
+  });
+}
+
+function applyStockSkip(cfg = {}) {
+  const params = stockParams(cfg);
+  const startCash = Math.max(0, Number(state.economy.cash || 0));
+  const shares = Math.floor(startCash / params.buyPrice);
+  const invested = shares * params.buyPrice;
+  const leftover = startCash - invested;
+  const resultValue = shares * params.resultPrice;
+  const missedProfit = resultValue + leftover - startCash;
+
+  applyFlags({
+    stock_bought: false,
+    stock_skipped: true,
+    stock_symbol: params.symbol,
+    stock_buy_price: params.buyPrice,
+    stock_result_price: params.resultPrice,
+    stock_start_cash: startCash,
+    stock_skip_cash: startCash,
+    stock_skip_shares: shares,
+    stock_skip_missed_profit: missedProfit,
+    stock_return_rate: Math.round((params.resultMultiplier - 1) * 100),
+  });
+}
+
+function applyStockResult() {
+  const flags = state.flags || {};
+  if (!flags.stock_bought || flags.stock_result_applied) return;
+
+  const invested = Number(flags.stock_invested || 0);
+  const resultValue = Number(flags.stock_result_value || 0);
+  if (resultValue <= 0) return;
+
+  applyEconomyDelta('assets', resultValue - invested);
+  applyFlags({ stock_result_applied: true });
 }
 
 function applyAffection(delta) {
