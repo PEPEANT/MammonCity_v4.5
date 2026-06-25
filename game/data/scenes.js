@@ -221,20 +221,34 @@ window.STORY = {
     a1_loan_offer: {
       header: '1막: 대출앱',
       image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'bankApp',
+        statusbar: { time: '23:48', battery: 22 },
+        bankName: '스피드머니',
+        accountName: '즉시대출 심사',
+        accountNo: '무직 가능 · 3분 승인',
+        balance: 0,
+        quick: ['한도조회', '즉시입금', '상환일', '약관'],
+        alert: { title: '대출 한도 승인', amount: 30000000, memo: '최대 30,000,000원 · 연체 시 추심 진행' },
+        tx: [
+          { name: '승인 가능 한도', time: '방금', memo: '비대면 심사 완료', amount: 30000000, balance: 30000000 },
+          { name: '예상 상환액', time: '30일 후', memo: '수수료·이자 포함', amount: -42000000, balance: -12000000 },
+        ],
+        choices: [
+          {
+            label: '대출앱에서 30,000,000원을 즉시 입금받는다',
+            next: 'w1_card',
+            effects: { cash: 30000000, debt: 42000000, flags: { first_loan: true, seed_money: 'loan', pressure: true } },
+          },
+          {
+            label: '망설이다가 결국 대출앱에서 입금받는다',
+            next: 'w1_card',
+            effects: { cash: 30000000, debt: 42000000, happy: -1, flags: { first_loan: true, seed_money: 'loan_delayed', pressure: true } },
+          },
+        ],
+      },
       speaker: '{이름}(25)',
-      text: '방에 눕자마자 휴대폰 알림이 떴다.\n\n"무직 가능. 3분 승인. 최대 3,000만원 즉시 입금."\n\n처음엔 광고라고 생각했다.\n그런데 계좌에 돈이 꽂히는 상상을 하자, 화면을 닫는 게 더 어려워졌다.',
-      choices: [
-        {
-          label: '3,000만원을 바로 빌린다',
-          next: 'w1_card',
-          effects: { cash: 30000000, debt: 42000000, flags: { first_loan: true, seed_money: 'loan', pressure: true } },
-        },
-        {
-          label: '망설이다가 결국 3,000만원을 빌린다',
-          next: 'w1_card',
-          effects: { cash: 30000000, debt: 42000000, happy: -1, flags: { first_loan: true, seed_money: 'loan_delayed', pressure: true } },
-        },
-      ],
+      text: '방에 눕자마자 휴대폰 알림이 떴다.\n\n"무직 가능. 3분 승인. 최대 30,000,000원 즉시 입금."\n\n처음엔 광고라고 생각했다.\n그런데 앱 안의 파란 버튼이, 당장 숨 쉴 수 있는 문처럼 보였다.',
     },
 
     /* ========== 1주차 — 정류장, 그리고 유민아 ========== */
