@@ -22,14 +22,13 @@
     return Object.prototype.hasOwnProperty.call(scenes, id);
   }
 
-  const RUNTIME_TARGETS = {
-    w2_contact: ['w2_yumina_text', 'w2_alone'],
-    w3_open: ['w3_date_meet', 'w3_market_arrival'],
-    w3_stock_result: ['w3_result_buy', 'w3_result_skip'],
-    w4_result: ['w4b', 'w4a'],
-    w4a_after: ['w4a_borrow_hesitate', 'w4a_alone'],
-    w4b_after: ['w4b_yumina', 'w4b_alone'],
-  };
+  // 런타임 분기는 data/branches.js 단일 진실에서 끌어온다(엔진·검증기와 공유).
+  // RUNTIME_BRANCHES[hub] = { gate, test, cases:[{to,label}] } → 허브별 도착 후보 목록으로 변환.
+  const RUNTIME_BRANCHES = (root && root.RUNTIME_BRANCHES) || {};
+  const RUNTIME_TARGETS = {};
+  Object.keys(RUNTIME_BRANCHES).forEach(function (hub) {
+    RUNTIME_TARGETS[hub] = RUNTIME_BRANCHES[hub].cases.map(function (c) { return c.to; });
+  });
 
   // 엔진의 런타임 분기(remapSceneId)를 데이터만으로 흉내: 없는 타겟이면 _plain/_checked 변형을 찾는다.
   function resolveTarget(scenes, id) {
@@ -42,6 +41,15 @@
     const hit = variants.find(v => sceneExists(scenes, v));
     if (hit) return { target: id, kind: 'runtime' }; // 런타임에 갈라지는 가상 타겟
     return { target: id, kind: 'broken' };
+  }
+
+  // 가상 타겟(런타임 분기)을 "실제 존재하는 씬 id 전부"로 펼친다.
+  // resolveTarget이 종류만 알려준다면, 이건 도달 판정용으로 모든 갈래를 돌려준다.
+  function realTargets(scenes, id) {
+    if (id == null) return [];
+    if (sceneExists(scenes, id)) return [id];
+    if (RUNTIME_TARGETS[id]) return RUNTIME_TARGETS[id].filter(v => sceneExists(scenes, v));
+    return [id + '_plain', id + '_checked', id + '_default'].filter(v => sceneExists(scenes, v));
   }
 
   // set / effects 를 사람이 읽는 델타 칩으로
@@ -65,7 +73,7 @@
         } else if (MONEY_KEYS.includes(k)) {
           out.push({ kind: 'money', name: k, val: fx[k] });
         } else if (typeof fx[k] === 'number') {
-          out.push({ kind: 'stat', name: k, val: fx[k] }); // 예: anger
+          out.push({ kind: 'stat', name: k, val: fx[k] }); // 예: happy
         } else {
           out.push({ kind: 'misc', name: k, val: fx[k] });
         }
@@ -110,8 +118,31 @@
     }
     if (sc.phone && sc.phone.acceptNext) push('☎ 받으면', sc.phone.acceptNext);
     if (sc.phone && sc.phone.declineNext) push('☎ 거절하면', sc.phone.declineNext);
-    // choices 경로엔 위에서 deltas를 이미 넣었으니, push로 만든 엣지엔 빈 deltas 보강
-    edges.forEach(e => { if (!e.deltas) e.deltas = []; });
+    // 카지노/게임 화면: 결과 씬이 phone[screen].winNext/loseNext/pushNext 에 중첩돼 있다(런타임 이동).
+    const gscreen = sc.phone && sc.phone.screen;
+    const gcfg = gscreen && sc.phone[gscreen];
+    if (gcfg && typeof gcfg === 'object') {
+      const labelMap = { winNext: '게임 승', loseNext: '게임 패', pushNext: '게임 무', drawNext: '게임 무' };
+      Object.keys(gcfg).forEach(k => {
+        if (/Next$/.test(k) && gcfg[k]) {
+          const fx = gcfg[k.replace(/Next$/, 'Effects')];
+          push(labelMap[k] || k, gcfg[k], collectDeltas({ effects: fx }));
+        }
+      });
+    }
+    // choices 경로엔 위에서 deltas를 이미 넣었으니, push로 만든 엣지엔 빈 deltas 보강.
+    // 타겟이 런타임 허브면 "무슨 조건으로 어디로 갈리는지"를 엣지에 붙인다.
+    edges.forEach(e => {
+      if (!e.deltas) e.deltas = [];
+      const b = RUNTIME_BRANCHES[e.target];
+      if (b) {
+        e.gate = b.gate;
+        e.branches = b.cases.map(c => ({
+          label: c.label, target: c.to,
+          kind: sceneExists(scenes, c.to) ? 'ok' : 'broken',
+        }));
+      }
+    });
     return edges;
   }
 
@@ -143,15 +174,13 @@
         weekOf[id] = myWeek;
         order.push(id);
         outEdges(scenes, sc).forEach(e => {
-          const r = resolveTarget(scenes, e.target);
-          const real = r.kind === 'ok' ? e.target
-            : r.kind === 'runtime' && RUNTIME_TARGETS[e.target] ? RUNTIME_TARGETS[e.target].find(v => sceneExists(scenes, v))
-            : r.kind === 'runtime' ? (sceneExists(scenes, e.target + '_plain') ? e.target + '_plain' : e.target + '_checked')
-            : null;
-          if (real && sceneExists(scenes, real) && !reached.has(real)) {
-            reached.add(real);
-            queue.push({ id: real, week: myWeek });
-          }
+          // 런타임 분기는 갈래 전부를 도달로 본다(예전엔 .find로 한쪽만 따라가 하위 씬이 통째로 고아였음).
+          realTargets(scenes, e.target).forEach(real => {
+            if (!reached.has(real)) {
+              reached.add(real);
+              queue.push({ id: real, week: myWeek });
+            }
+          });
         });
       }
     }

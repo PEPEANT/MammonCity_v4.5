@@ -26,32 +26,27 @@ const SCENES_FILE = path.join(GAME_DIR, 'data', 'scenes.js');
 // phone.js 가 실제로 그릴 수 있는 화면. 새 화면 추가하면 여기도 같이 갱신.
 const SUPPORTED_PHONE_SCREENS = [
   'ringing', 'missed', 'recents', 'messages',
+  'chatRooms', 'apps', 'wealthHub', 'assetStore', 'bankApp', 'snsFeed', 'youtube',
   'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult',
+  'oddEvenGame', 'ladder', 'casino', 'blackjackGame', 'blackjack',
 ];
 
-// engine.js remapSceneId 가 플래그로 갈아끼우는 "가상 허브 id" → 실제 도착 후보들.
-// 씬 데이터는 허브 id로 next 를 걸고, 엔진이 진입 시점에 실제 씬으로 바꾼다.
-// 여기 등록해 두면 검증기가 허브를 "존재하는 씬"으로 보고, 도착 후보들을 referenced 처리한다.
-// 엔진 remap 을 고치면 이 표도 같이 갱신할 것.
-const REMAP_HUBS = {
-  w1_walk_to_stop: ['w1_walk_to_stop_plain', 'w1_walk_to_stop_checked'],
-  w1_busstop: ['w1_busstop_plain', 'w1_busstop_checked'],
-  w1_hunt_fail: ['w1_hunt_fail_plain'],
-  w2_contact: ['w2_yumina_text', 'w2_alone'],
-  w3_open: ['w3_date_meet', 'w3_market_arrival'],
-  w3_stock_result: ['w3_result_battery', 'w3_result_bio', 'w3_result_loss', 'w3_result_skip'],
-  w4_result: ['w4a', 'w4b'],
-  w4a_after: ['w4a_borrow_hesitate', 'w4a_alone'],
-  w4b_after: ['w4b_yumina', 'w4b_alone'],
-};
+// 런타임 허브 → 실제 도착 후보. 분기 단일 진실(game/data/branches.js)에서 그대로 끌어온다.
+// (예전엔 여기에 표를 복붙해 둬서 엔진과 자주 어긋났음. 이제 한 곳만 고치면 됨.)
+const { RUNTIME_BRANCHES } = require(path.join(GAME_DIR, 'data', 'branches.js'));
+const REMAP_HUBS = {};
+for (const hub of Object.keys(RUNTIME_BRANCHES)) {
+  REMAP_HUBS[hub] = RUNTIME_BRANCHES[hub].cases.map(c => c.to);
+}
 
 // engine.js applyEffects 가 실제로 읽는 키. 오타 잡이용.
 const EFFECT_KEYS = [
   'cash', 'debt', 'assets', 'turn', 'week', 'day', 'addDay',
   'flag', 'flags', 'affection', 'economy', 'unlock',
-  'anger', 'rage', 'meters',
-  'setCash', 'setDebt', 'setAssets', 'setAnger', 'startingCash',
+  'happy', 'meters',
+  'setCash', 'setDebt', 'setAssets', 'setHappy', 'startingCash',
   'stockBuyAll', 'stockSkip', 'stockResult',
+  'cashAllInWin', 'cashAllInLoss',
 ];
 
 // 종료형(다음 씬이 없어도 정상인) 타입
@@ -182,6 +177,23 @@ function validate(story) {
         referenced.add(target);
         if (!idSet.has(target)) err(`${where} phone.${key} → 없는 씬 "${target}"`);
       });
+
+      [
+        ['oddEvenGame', ['winNext', 'loseNext'], ['winEffects', 'loseEffects']],
+        ['blackjackGame', ['winNext', 'loseNext', 'pushNext'], ['winEffects', 'loseEffects', 'pushEffects']],
+      ].forEach(([configKey, nextKeys, effectKeys]) => {
+        const game = sc.phone[configKey];
+        if (!game) return;
+        nextKeys.forEach(key => {
+          const target = game[key];
+          if (!target) return;
+          referenced.add(target);
+          if (!idSet.has(target)) err(`${where} phone.${configKey}.${key} → 없는 씬 "${target}"`);
+        });
+        effectKeys.forEach(key => {
+          if (game[key]) checkEffects(`${where} phone.${configKey}.${key}`, game[key]);
+        });
+      });
     }
 
     // 5) 막다른 씬
@@ -189,7 +201,9 @@ function validate(story) {
     const hasPhoneExit = !!(sc.phone && (
       sc.phone.acceptNext ||
       sc.phone.declineNext ||
-      (Array.isArray(sc.phone.choices) && sc.phone.choices.length > 0)
+      (Array.isArray(sc.phone.choices) && sc.phone.choices.length > 0) ||
+      (sc.phone.oddEvenGame && (sc.phone.oddEvenGame.winNext || sc.phone.oddEvenGame.loseNext)) ||
+      (sc.phone.blackjackGame && (sc.phone.blackjackGame.winNext || sc.phone.blackjackGame.loseNext || sc.phone.blackjackGame.pushNext))
     ));
     const hasExit = !!sc.next || (Array.isArray(sc.choices) && sc.choices.length > 0) || hasPhoneExit;
     if (!isTerminal && !hasExit) {

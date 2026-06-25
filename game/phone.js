@@ -35,9 +35,50 @@ window.PhoneWidget = (function () {
     return `${Math.round(Number(v || 0)).toLocaleString('ko-KR')}원`;
   }
 
+  function unitMoney(v) {
+    const abs = Math.abs(Math.round(Number(v || 0)));
+    if (abs >= 100000000) {
+      const value = abs / 100000000;
+      return `${Number.isInteger(value) ? value.toLocaleString('ko-KR') : value.toFixed(1)}억`;
+    }
+    if (abs >= 10000) {
+      const value = abs / 10000;
+      return `${Number.isInteger(value) ? value.toLocaleString('ko-KR') : Math.round(value).toLocaleString('ko-KR')}만원`;
+    }
+    return '';
+  }
+
+  function wonEok(v) {
+    const n = Math.round(Number(v || 0));
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(n);
+    const unit = unitMoney(abs);
+    return `${sign}${money(abs)}${unit ? ` (${unit})` : ''}`;
+  }
+
+  function compactMoney(v) {
+    const n = Math.round(Number(v || 0));
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(n);
+    if (abs >= 100000000) {
+      const value = abs / 100000000;
+      return `${sign}${Number.isInteger(value) ? value.toLocaleString('ko-KR') : value.toFixed(1)}억`;
+    }
+    if (abs >= 10000) return `${sign}${Math.round(abs / 10000).toLocaleString('ko-KR')}만`;
+    return `${sign}${abs.toLocaleString('ko-KR')}`;
+  }
+
   function signedMoney(v) {
     const n = Math.round(Number(v || 0));
     return `${n >= 0 ? '+' : '-'}${Math.abs(n).toLocaleString('ko-KR')}원`;
+  }
+
+  // 부호 + 원 단위 + (억) 병기.  예: +9,000,000,000원 (90억)
+  function signedWonEok(v) {
+    const n = Math.round(Number(v || 0));
+    const abs = Math.abs(n);
+    const unit = unitMoney(abs);
+    return `${n >= 0 ? '+' : '-'}${money(abs)}${unit ? ` (${unit})` : ''}`;
   }
 
   // 핸드셋 아이콘(폰트 의존 없이 항상 동일하게 보이도록 인라인 SVG)
@@ -46,7 +87,9 @@ window.PhoneWidget = (function () {
     + '1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 '
     + '1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>';
 
-  const STOCK_ACTION_SCREENS = new Set(['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult']);
+  // assetStore/bankApp 는 화면 안의 버튼(구매하기/확인)으로 직접 진행하므로 dialogue 세트에서 제외.
+  const STOCK_ACTION_SCREENS = new Set(['chatRooms', 'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult', 'ladder', 'casino', 'blackjack', 'wealthHub', 'snsFeed']);
+  const MANUAL_ACTION_SCREENS = new Set(['oddEvenGame', 'blackjackGame']);
 
   function firstScreen(cfg) {
     return (cfg && cfg.screen) || (cfg && Array.isArray(cfg.sequence) && cfg.sequence[0]) || '';
@@ -54,6 +97,107 @@ window.PhoneWidget = (function () {
 
   function stockChoicesUseDialogue(cfg) {
     return STOCK_ACTION_SCREENS.has(firstScreen(cfg));
+  }
+
+  function usesManualPhoneActions(cfg) {
+    return MANUAL_ACTION_SCREENS.has(firstScreen(cfg));
+  }
+
+  function randomInt(max) {
+    const limit = Math.max(1, Number(max || 1));
+    if (window.crypto && window.crypto.getRandomValues) {
+      const values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      return values[0] % limit;
+    }
+    return Math.floor(Math.random() * limit);
+  }
+
+  function cloneEffects(effects) {
+    const copy = Object.assign({}, effects || {});
+    copy.flags = Object.assign({}, (effects && effects.flags) || {});
+    return copy;
+  }
+
+  function gameEffects(effects, flags) {
+    const copy = cloneEffects(effects);
+    copy.flags = Object.assign(copy.flags || {}, flags || {});
+    return copy;
+  }
+
+  function economyOf(state) {
+    return (state && state.economy) || {};
+  }
+
+  function netWorthOf(state) {
+    const economy = economyOf(state);
+    return Number(economy.cash || 0) + Number(economy.assets || 0) - Number(economy.debt || 0);
+  }
+
+  function wealthTier(state) {
+    const net = netWorthOf(state);
+    if (net >= 10000000000) return '금수저';
+    if (net >= 1000000000) return '은수저';
+    if (net >= 100000000) return '동수저';
+    return '흙수저';
+  }
+
+  function choiceListForScene(scene) {
+    if (!scene) return [];
+    return [
+      ...(Array.isArray(scene.choices) ? scene.choices : []),
+      ...((scene.phone && Array.isArray(scene.phone.choices)) ? scene.phone.choices : []),
+    ];
+  }
+
+  function storyChoiceByNext(next) {
+    if (!next || !window.STORY || !window.STORY.scenes) return null;
+    const scenes = window.STORY.scenes;
+    for (const id in scenes) {
+      const found = choiceListForScene(scenes[id]).find(choice => choice && choice.next === next);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function assetChoice(item, cfg, index) {
+    const choices = Array.isArray(cfg && cfg.choices) ? cfg.choices : [];
+    if (typeof item.choiceIndex === 'number') return choices[item.choiceIndex] || null;
+    const target = item.choiceNext || item.next;
+    if (target) {
+      return choices.find(choice => choice && choice.next === target) || storyChoiceByNext(target);
+    }
+    if (item.flag) {
+      return choices.find(choice => choice && choice.effects && choice.effects.flags && choice.effects.flags[item.flag]);
+    }
+    return choices[index] || null;
+  }
+
+  function assetPriceLabel(item, cfg, index, owned) {
+    if (owned) return item.ownedLabel || '보유중';
+    const choice = assetChoice(item, cfg, index);
+    const cash = choice && choice.effects && choice.effects.cash;
+    if (typeof cash === 'number' && cash < 0) return wonEok(Math.abs(cash));
+    if (typeof item.cost === 'number') return wonEok(item.cost);
+    if (item.price != null) return String(item.price);
+    return item.lockedLabel || '대기';
+  }
+
+  function assetMetaText(item, cfg, index) {
+    const choice = assetChoice(item, cfg, index);
+    const effectValue = choice && choice.effects && choice.effects.assets;
+    const value = typeof effectValue === 'number' ? effectValue : item.value;
+    const parts = [];
+    if (item.meta) parts.push(item.meta);
+    if (typeof value === 'number' && value > 0) parts.push(`평가 ${wonEok(value)}`);
+    return parts.join(' · ');
+  }
+
+  // 자산 항목 → 그 항목을 사는 choice 의 인덱스(구매하기 버튼 연결용). 없으면 -1.
+  function assetChoiceIndex(item, cfg, index) {
+    const choices = (cfg && cfg.choices) || [];
+    const choice = assetChoice(item, cfg, index);
+    return choice ? choices.indexOf(choice) : -1;
   }
 
   /* ---------- 상태바 ---------- */
@@ -157,6 +301,317 @@ window.PhoneWidget = (function () {
         </div>
         <div class="ph2-msg-list">${rows}</div>
         ${choices ? `<div class="ph2-msg-choices">${choices}</div>` : ''}
+      </div>`;
+  }
+
+  /* ---------- 화면: 채팅방 목록 ---------- */
+  function screenChatRooms(cfg, state) {
+    const flags = (state && state.flags) || {};
+    const readAll = cfg.readFlag && flags[cfg.readFlag];
+    const title = esc(cfg.title || '까까오톡');
+    const subtitle = esc(readAll && cfg.subtitleAfterRead ? cfg.subtitleAfterRead : (cfg.subtitle || '대화'));
+    const headBadge = esc(readAll && cfg.badgeAfterRead ? cfg.badgeAfterRead : (cfg.badge || 'LIVE'));
+    const rooms = Array.isArray(cfg.rooms) && cfg.rooms.length
+      ? cfg.rooms
+      : [
+        { name: '유민아', preview: '오늘도 늦게까지 깨어 있어요?', meta: '방금', badge: '1', tone: 'warm' },
+        { name: '비트코인 레버리지방', preview: '청산 알림이 계속 올라옵니다.', meta: '1분 전', badge: '99+', tone: 'risk' },
+      ];
+
+    const visibleRooms = rooms
+      .filter(room => {
+        if (room.requiresFlag && !flags[room.requiresFlag]) return false;
+        if (room.hideWhenFlag && flags[room.hideWhenFlag]) return false;
+        return true;
+      })
+      .map(room => {
+        const read = !!(room.readFlag && flags[room.readFlag]);
+        return {
+          ...room,
+          _read: read,
+          preview: read ? (room.readPreview || room.preview || '') : (room.preview || ''),
+          meta: read ? (room.readMeta || room.meta || '읽음') : (room.meta || ''),
+          badge: read ? (room.readBadge || '') : (room.badge || ''),
+          locked: read ? (room.readLocked || room.locked || '') : (room.locked || ''),
+        };
+      });
+
+    return `
+      <div class="ph2-chatrooms">
+        <div class="ph2-chat-head">
+          <div>
+            <b>${title}</b>
+            <span>${subtitle}</span>
+          </div>
+          <em>${headBadge}</em>
+        </div>
+        <div class="ph2-chat-list">
+          ${visibleRooms.map(room => {
+            const tone = room.tone ? ` ph2-chat-${esc(room.tone)}` : '';
+            const readClass = room._read ? ' ph2-chat-read' : '';
+            const initials = esc(room.avatar || (room.name || '?').slice(0, 1));
+            const badge = room.badge ? `<span class="ph2-chat-badge">${esc(room.badge)}</span>` : '';
+            const locked = room.locked ? `<small class="ph2-chat-lock">${esc(room.locked)}</small>` : '';
+            return `
+              <div class="ph2-chat-row${tone}${readClass}">
+                <div class="ph2-chat-avatar">${initials}</div>
+                <div class="ph2-chat-main">
+                  <div class="ph2-chat-top">
+                    <b>${esc(room.name || '채팅방')}</b>
+                    <time>${esc(room.meta || '')}</time>
+                  </div>
+                  <p>${esc(room.preview || '')}</p>
+                  ${locked}
+                </div>
+                ${badge}
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 화면: 앱 선택 ---------- */
+  function screenApps(cfg) {
+    const choices = Array.isArray(cfg.choices) ? cfg.choices : [];
+    const apps = Array.isArray(cfg.apps) && cfg.apps.length
+      ? cfg.apps
+      : choices.map(choice => ({ title: choice.label || '앱', meta: '' }));
+    const title = esc(cfg.homeTitle || '휴대폰');
+    const subtitle = esc(cfg.homeSubtitle || '어떤 앱을 열까');
+
+    return `
+      <div class="ph2-apps">
+        <div class="ph2-apps-head">
+          <b>${title}</b>
+          <span>${subtitle}</span>
+        </div>
+        <div class="ph2-app-grid">
+          ${apps.map((app, i) => {
+            const choice = choices[i] || {};
+            const disabled = choice.disabled ? ' disabled' : '';
+            const tone = app.tone ? ` ${esc(app.tone)}` : '';
+            return `
+              <button type="button" class="ph2-app-tile${tone}" data-phone-choice="${i}"${disabled}>
+                <span class="ph2-app-icon" aria-hidden="true">${esc(app.icon || '')}</span>
+                <b>${esc(app.title || choice.label || '앱')}</b>
+                <small>${esc(app.meta || '')}</small>
+              </button>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 화면: 금수저 자산 허브 ---------- */
+  function screenWealthHub(cfg, state) {
+    const economy = economyOf(state);
+    const flags = (state && state.flags) || {};
+    const apps = Array.isArray(cfg.wealthApps) ? cfg.wealthApps : [
+      { title: 'VIP 차고', meta: flags.asset_car ? '출고 완료' : '미구매', icon: 'CAR', tone: 'car' },
+      { title: '부동산', meta: flags.asset_home ? '입주 완료' : flags.asset_property ? '매입 완료' : '매물 대기', icon: 'APT', tone: 'property' },
+      { title: 'SNS', meta: flags.sns_income ? '수익화 완료' : flags.sns_unlocked ? '게시 가능' : '잠김', icon: 'SNS', tone: 'sns' },
+    ];
+    const milestones = Array.isArray(cfg.milestones) ? cfg.milestones : [
+      ['차량', flags.asset_car ? '완료' : '대기'],
+      ['매입', flags.asset_property ? '완료' : '대기'],
+      ['입주', flags.asset_home ? '완료' : '대기'],
+      ['SNS', flags.sns_income ? '수익화' : flags.sns_unlocked ? '해금' : '잠김'],
+    ];
+
+    return `
+      <div class="ph2-wealth">
+        <div class="ph2-wealth-head">
+          <span>${esc(cfg.kicker || 'BAEGEUM BLACK')}</span>
+          <b>${esc(cfg.title || wealthTier(state))}</b>
+          <small>${esc(cfg.subtitle || '금수저 패키지가 해금되었습니다')}</small>
+        </div>
+        <div class="ph2-wealth-balance">
+          <div><span>현금</span><b>${wonEok(economy.cash || 0)}</b></div>
+          <div><span>자산</span><b>${wonEok(economy.assets || 0)}</b></div>
+          <div><span>순자산</span><b>${wonEok(netWorthOf(state))}</b></div>
+        </div>
+        <div class="ph2-wealth-apps">
+          ${apps.map(app => `
+            <div class="ph2-wealth-app ${esc(app.tone || '')}">
+              <span>${esc(app.icon || '')}</span>
+              <b>${esc(app.title || '')}</b>
+              <small>${esc(app.meta || '')}</small>
+            </div>`).join('')}
+        </div>
+        <div class="ph2-wealth-steps">
+          ${milestones.map(([label, status]) => `
+            <div><span>${esc(label)}</span><b>${esc(status)}</b></div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 화면: 자산 구매 ---------- */
+  function screenAssetStore(cfg, state) {
+    const economy = economyOf(state);
+    const flags = (state && state.flags) || {};
+    const items = Array.isArray(cfg.assets) ? cfg.assets : [];
+    return `
+      <div class="ph2-shop">
+        <div class="ph2-shop-bar">
+          <span class="ph2-shop-brand"><i></i>${esc(cfg.brand || 'BLACK 멤버십')}</span>
+          <span class="ph2-shop-bal">보유 ${wonEok(economy.cash || 0)}</span>
+        </div>
+        <div class="ph2-shop-title">
+          <b>${esc(cfg.title || 'VIP 자산')}</b>
+          <small>${esc(cfg.subtitle || '현금은 줄고, 등급은 올라갑니다')}</small>
+        </div>
+        <div class="ph2-shop-list">
+          ${items.map((item, i) => {
+            const owned = item.flag && flags[item.flag];
+            const priceLabel = assetPriceLabel(item, cfg, i, owned);
+            const meta = assetMetaText(item, cfg, i);
+            const ci = assetChoiceIndex(item, cfg, i);
+            const thumb = item.thumb
+              ? `<div class="ph2-shop-thumb"><img src="${esc(item.thumb)}" alt=""></div>`
+              : `<div class="ph2-shop-thumb ph2-shop-thumb-ph">${esc(item.kind || 'ASSET')}</div>`;
+            const cta = owned
+              ? `<span class="ph2-shop-owned">보유중</span>`
+              : ci >= 0
+                ? `<button type="button" class="ph2-shop-buy" data-phone-choice="${ci}">구매하기</button>`
+                : `<span class="ph2-shop-lock">${esc(item.lockedLabel || '대기')}</span>`;
+            return `
+              <div class="ph2-shop-card ${owned ? 'owned' : ''}">
+                ${thumb}
+                <div class="ph2-shop-info">
+                  <span class="ph2-shop-kind">${esc(item.kind || 'ASSET')}</span>
+                  <b class="ph2-shop-name">${esc(item.name || '')}</b>
+                  ${meta ? `<small class="ph2-shop-meta">${esc(meta)}</small>` : ''}
+                  <div class="ph2-shop-foot">
+                    <strong class="ph2-shop-price">${esc(priceLabel)}</strong>
+                    ${cta}
+                  </div>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 화면: 은행 앱(거래내역 · 입출금 알림 · 잔액) ---------- */
+  function screenBankApp(cfg, state) {
+    const economy = economyOf(state);
+    const bankName = cfg.bankName || 'BG뱅크';
+    const accountName = cfg.accountName || '입출금통장';
+    const accountNo = cfg.accountNo || '102-9982-1457';
+    const balance = typeof cfg.balance === 'number' ? cfg.balance : Number(economy.cash || 0);
+    const tx = Array.isArray(cfg.tx) ? cfg.tx : [];
+    const alert = cfg.alert;
+
+    const alertHTML = alert ? `
+      <div class="ph2-bank-push ${alert.amount < 0 ? 'out' : 'in'}">
+        <span class="ph2-bank-push-app"><i></i>${esc(bankName)}</span>
+        <b>${esc(alert.title || (alert.amount < 0 ? '출금' : '입금'))} ${typeof alert.amount === 'number' ? signedWonEok(alert.amount) : ''}</b>
+        ${alert.memo ? `<small>${esc(alert.memo)}</small>` : ''}
+      </div>` : '';
+
+    const quick = (Array.isArray(cfg.quick) && cfg.quick.length ? cfg.quick : ['송금', '이체', '자산', '더보기'])
+      .map(q => `<span>${esc(q)}</span>`).join('');
+
+    const txHTML = tx.map(t => {
+      const amt = Number(t.amount || 0);
+      return `
+        <div class="ph2-bank-tx">
+          <div class="ph2-bank-tx-l">
+            <b>${esc(t.name || '')}</b>
+            <small>${esc(t.time || '')}${t.memo ? ` · ${esc(t.memo)}` : ''}</small>
+          </div>
+          <div class="ph2-bank-tx-r">
+            <strong class="${amt < 0 ? 'out' : 'in'}">${signedWonEok(amt)}</strong>
+            ${typeof t.balance === 'number' ? `<small>${money(t.balance)}</small>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    const choices = (Array.isArray(cfg.choices) ? cfg.choices : []).map((c, i) =>
+      `<button type="button" class="ph2-bank-cta" data-phone-choice="${i}">${esc(c.label || '확인')}</button>`).join('');
+
+    return `
+      <div class="ph2-bank">
+        <div class="ph2-bank-bar">
+          <span class="ph2-bank-brand"><i></i>${esc(bankName)}</span>
+          <span class="ph2-bank-ico">≡</span>
+        </div>
+        <div class="ph2-bank-scroll">
+          ${alertHTML}
+          <div class="ph2-bank-card">
+            <div class="ph2-bank-acc">${esc(accountName)} <span>${esc(accountNo)}</span></div>
+            <div class="ph2-bank-balance">${wonEok(balance)}</div>
+            <div class="ph2-bank-quick">${quick}</div>
+          </div>
+          ${tx.length ? `<div class="ph2-bank-tx-head">거래내역</div><div class="ph2-bank-tx-list">${txHTML}</div>` : ''}
+        </div>
+        ${choices ? `<div class="ph2-bank-actions">${choices}</div>` : ''}
+      </div>`;
+  }
+
+  /* ---------- 화면: SNS 피드 ---------- */
+  function screenSnsFeed(cfg, state) {
+    const flags = (state && state.flags) || {};
+    const posts = Array.isArray(cfg.posts) ? cfg.posts : [];
+    const followers = cfg.followers || (flags.sns_income ? '82.4만' : flags.sns_unlocked ? '18.6만' : '0');
+    return `
+      <div class="ph2-sns">
+        <div class="ph2-sns-head">
+          <b>${esc(cfg.title || 'BG Social')}</b>
+          <span>followers ${esc(followers)}</span>
+        </div>
+        <div class="ph2-sns-profile">
+          <span>${esc(cfg.handle || '@baegeum_city')}</span>
+          <b>${esc(cfg.bio || '차, 집, 계좌가 전부 콘텐츠가 됐다')}</b>
+        </div>
+        <div class="ph2-sns-posts">
+          ${posts.map(post => `
+            <div class="ph2-sns-post">
+              <span>${esc(post.tag || 'POST')}</span>
+              <b>${esc(post.title || '')}</b>
+              <small>${esc(post.meta || '')}</small>
+              <em>${esc(post.likes || '')}</em>
+            </div>`).join('')}
+        </div>
+        <div class="ph2-sns-income">
+          <span>${esc(cfg.incomeLabel || '이번 달 협찬 예상')}</span>
+          <b>${esc(cfg.income || (flags.sns_income ? '+7.4억' : '심사중'))}</b>
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 화면: 유튜브(FOMO 뉴스 피드) ---------- */
+  function screenYoutube(cfg) {
+    const v = cfg.video || {};
+    const cats = Array.isArray(cfg.categories) && cfg.categories.length
+      ? cfg.categories : ['전체', '뉴스', '비트코인', '경제', '실시간'];
+    const shorts = Array.isArray(cfg.shorts) ? cfg.shorts : [];
+    const thumb = v.thumb
+      ? `<img class="ph2-yt-thumb" src="${esc(v.thumb)}" alt="">`
+      : `<div class="ph2-yt-thumb ph2-yt-thumb-ph"></div>`;
+    return `
+      <div class="ph2-yt">
+        <div class="ph2-yt-bar">
+          <span class="ph2-yt-logo"><i></i>YouTube</span>
+          <span class="ph2-yt-icons">⤺ 🔔 🔍</span>
+        </div>
+        <div class="ph2-yt-cats">
+          ${cats.map((c, i) => `<span class="ph2-yt-cat${i === 0 ? ' on' : ''}">${esc(c)}</span>`).join('')}
+        </div>
+        <div class="ph2-yt-feed">
+          <div class="ph2-yt-video">
+            <div class="ph2-yt-thumb-wrap">${thumb}${v.duration ? `<span class="ph2-yt-dur">${esc(v.duration)}</span>` : ''}</div>
+            <div class="ph2-yt-meta">
+              <div class="ph2-yt-title">${esc(v.title || '')}</div>
+              <div class="ph2-yt-sub">${esc(v.channel || '')}${v.meta ? ` · ${esc(v.meta)}` : ''}</div>
+            </div>
+          </div>
+          ${shorts.length ? `
+            <div class="ph2-yt-shorts-h">Shorts</div>
+            <div class="ph2-yt-shorts">
+              ${shorts.map(sh => `<div class="ph2-yt-short${sh.tone ? ' t-' + esc(sh.tone) : ''}"><span>${esc(sh.title || '')}</span></div>`).join('')}
+            </div>` : ''}
+        </div>
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -287,9 +742,9 @@ window.PhoneWidget = (function () {
           <div class="ph2-stock-name">${esc(s.symbol)} <span>${esc(s.code)}</span></div>
           <div class="ph2-stock-row">
             <div class="ph2-stock-price">${money(s.buyPrice).replace('원', '')}</div>
-            <div class="ph2-stock-change">▲ +61.54%</div>
+            <div class="ph2-stock-change">${esc(cfg.changePct || '▲ +61.54%')}</div>
           </div>
-          <div class="ph2-stock-sub">거래량 증가</div>
+          <div class="ph2-stock-sub">${esc(cfg.marketSub || '거래량 증가')}</div>
         </div>
         <div class="ph2-chart">
           <span class="ph2-live">LIVE</span>
@@ -305,6 +760,7 @@ window.PhoneWidget = (function () {
   }
 
   function screenCommunity(cfg) {
+    const s = stockParams(cfg);
     const posts = cfg.posts || [
       { user: '불개미', text: '오늘 장 끝까지 봐라. 거래량 붙었다.', hot: true, rec: 142 },
       { user: '존버맨', text: '시초에 못 산 사람들 계속 쳐다만 봄.', rec: 88 },
@@ -321,7 +777,7 @@ window.PhoneWidget = (function () {
       </div>`).join('');
     return `
       <div class="ph2-stock ph2-community">
-        <div class="ph2-community-head"><b>배금전자 종목토론방</b><span>실시간</span></div>
+        <div class="ph2-community-head"><b>${esc(cfg.communityTitle || `${s.symbol} 종목토론방`)}</b><span>실시간</span></div>
         <div class="ph2-community-feed"><div>${rows}</div></div>
         ${phoneChoicesHTML(cfg)}
       </div>`;
@@ -423,17 +879,336 @@ window.PhoneWidget = (function () {
       </div>`;
   }
 
+  function oddEvenState(cfg) {
+    if (!cfg.__oddEvenState) {
+      cfg.__oddEvenState = {
+        phase: 'pick',
+        pick: '',
+        roll: 0,
+        result: '',
+        next: '',
+        effects: {},
+      };
+    }
+    return cfg.__oddEvenState;
+  }
+
+  function screenOddEvenGame(cfg, state) {
+    const game = cfg.oddEvenGame || {};
+    const session = oddEvenState(cfg);
+    const resultClass = session.result === 'win' ? ' win' : session.result === 'lose' ? ' lose' : '';
+    const pickLabel = session.pick === 'odd' ? '홀' : session.pick === 'even' ? '짝' : '-';
+    const parityLabel = session.roll ? (session.roll % 2 ? '홀' : '짝') : '대기';
+    const resultText = session.result === 'win'
+      ? signedMoney(game.winAmount || game.bet || 0)
+      : session.result === 'lose'
+        ? signedMoney(-(game.loseAmount || game.bet || 0))
+        : '결과 대기';
+    return `
+      <div class="ph2-gamble ph2-odd-even">
+        <div class="ph2-gamble-app">
+          <span class="ph2-gamble-logo"></span>
+          <span class="ph2-gamble-title">${esc(game.title || '홀짝')}</span>
+          <span class="ph2-gamble-right">${esc(game.badge || 'LIVE')}</span>
+        </div>
+        <div class="ph2-oe-stage">
+          <div class="ph2-oe-number${session.roll ? ' is-open' : ''}">${session.roll || '?'}</div>
+          <div class="ph2-oe-meta">
+            <span>선택 <b>${esc(pickLabel)}</b></span>
+            <span>결과 <b>${esc(parityLabel)}</b></span>
+          </div>
+        </div>
+        <div class="ph2-gamble-panel${resultClass}">
+          <span>${esc(game.round || '1라운드')}</span>
+          <b>${esc(resultText)}</b>
+          <small>베팅 ${money(game.bet || 0)} · 잔고 ${money((state && state.economy && state.economy.cash) || 0)}</small>
+        </div>
+        <div class="ph2-game-actions">
+          ${session.phase === 'pick' ? `
+            <button type="button" class="ph2-game-btn" data-phone-act="odd:pick:odd">홀 선택</button>
+            <button type="button" class="ph2-game-btn" data-phone-act="odd:pick:even">짝 선택</button>
+          ` : `
+            <button type="button" class="ph2-game-btn primary" data-phone-act="odd:continue">다음 알림을 확인한다</button>
+          `}
+        </div>
+      </div>`;
+  }
+
+  function screenLadder(cfg, state) {
+    const game = cfg.ladder || {};
+    const rows = Array.isArray(game.rows) && game.rows.length ? game.rows : ['left', 'right', 'left', 'right'];
+    const resultClass = game.result === 'win' ? ' win' : game.result === 'lose' ? ' lose' : '';
+    const resultText = game.resultText || '결과 대기';
+    return `
+      <div class="ph2-gamble ph2-ladder">
+        <div class="ph2-gamble-app">
+          <span class="ph2-gamble-logo"></span>
+          <span class="ph2-gamble-title">${esc(game.title || '홀짝 사다리')}</span>
+          <span class="ph2-gamble-right">${esc(game.badge || '실시간')}</span>
+        </div>
+        <div class="ph2-ladder-board">
+          <div class="ph2-ladder-top">
+            <span class="${game.pick === 'odd' ? 'on' : ''}">홀</span>
+            <span class="${game.pick === 'even' ? 'on' : ''}">짝</span>
+          </div>
+          <div class="ph2-ladder-lines">
+            <i></i><i></i>
+            ${rows.map((side, i) => `<b class="${side}" style="top:${24 + i * 17}%"></b>`).join('')}
+            <em class="${game.path || 'left'}"></em>
+          </div>
+          <div class="ph2-ladder-bottom">
+            <span>도착 A</span>
+            <span>도착 B</span>
+          </div>
+        </div>
+        <div class="ph2-gamble-panel${resultClass}">
+          <span>${esc(game.round || '1라운드')}</span>
+          <b>${esc(resultText)}</b>
+          <small>베팅 ${esc(game.stakeLabel || money(game.stake || 0))} · 잔고 ${money(game.balance == null ? ((state && state.economy && state.economy.cash) || 0) : game.balance)}</small>
+        </div>
+        ${phoneChoicesHTML(cfg)}
+      </div>`;
+  }
+
+  function cardHTML(card) {
+    const rank = typeof card === 'string' ? card : (card && card.rank) || '?';
+    const suit = typeof card === 'string' ? '' : (card && card.suit) || '';
+    const red = ['♥', '♦'].includes(suit) ? ' red' : '';
+    return `<span class="ph2-card${red}"><b>${esc(rank)}</b>${suit ? `<i>${esc(suit)}</i>` : ''}</span>`;
+  }
+
+  const CARD_SUITS = ['♠', '♥', '♦', '♣'];
+  const CARD_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+  function shuffledDeck() {
+    const deck = [];
+    CARD_SUITS.forEach(suit => {
+      CARD_RANKS.forEach(rank => deck.push({ rank, suit }));
+    });
+    for (let i = deck.length - 1; i > 0; i -= 1) {
+      const j = randomInt(i + 1);
+      const t = deck[i];
+      deck[i] = deck[j];
+      deck[j] = t;
+    }
+    return deck;
+  }
+
+  function drawCard(session) {
+    if (!session.deck.length) session.deck = shuffledDeck();
+    return session.deck.pop();
+  }
+
+  function cardScore(card) {
+    if (!card) return 0;
+    if (card.rank === 'A') return 11;
+    if (['J', 'Q', 'K'].includes(card.rank)) return 10;
+    return Number(card.rank || 0);
+  }
+
+  function handScore(cards) {
+    let total = 0;
+    let aces = 0;
+    cards.forEach(card => {
+      total += cardScore(card);
+      if (card && card.rank === 'A') aces += 1;
+    });
+    while (total > 21 && aces > 0) {
+      total -= 10;
+      aces -= 1;
+    }
+    return total;
+  }
+
+  function blackjackState(cfg) {
+    if (!cfg.__blackjackState) {
+      const session = {
+        deck: shuffledDeck(),
+        dealer: [],
+        player: [],
+        phase: 'play',
+        result: '',
+        next: '',
+        effects: {},
+      };
+      session.player.push(drawCard(session), drawCard(session));
+      session.dealer.push(drawCard(session), drawCard(session));
+      cfg.__blackjackState = session;
+    }
+    return cfg.__blackjackState;
+  }
+
+  function settleBlackjack(cfg, session, result) {
+    const game = cfg.blackjackGame || {};
+    session.phase = 'result';
+    session.result = result;
+    if (result === 'win') {
+      session.next = game.winNext;
+      session.effects = gameEffects(game.winEffects, { blackjack_result: 'win', blackjack_played: true, post_stock_gamble_result: 'win' });
+    } else if (result === 'lose') {
+      session.next = game.loseNext;
+      session.effects = gameEffects(game.loseEffects, { blackjack_result: 'lose', blackjack_played: true, post_stock_gamble_result: 'lose' });
+    } else {
+      session.next = game.pushNext || game.winNext;
+      session.effects = gameEffects(game.pushEffects, { blackjack_result: 'push', blackjack_played: true, post_stock_gamble_result: 'push' });
+    }
+  }
+
+  function finishDealer(cfg, session) {
+    while (handScore(session.dealer) < 17) {
+      session.dealer.push(drawCard(session));
+    }
+    const dealerScore = handScore(session.dealer);
+    const playerScore = handScore(session.player);
+    if (dealerScore > 21 || playerScore > dealerScore) {
+      settleBlackjack(cfg, session, 'win');
+    } else if (playerScore < dealerScore) {
+      settleBlackjack(cfg, session, 'lose');
+    } else {
+      settleBlackjack(cfg, session, 'push');
+    }
+  }
+
+  function screenBlackjackGame(cfg) {
+    const game = cfg.blackjackGame || {};
+    const session = blackjackState(cfg);
+    const dealerVisible = session.phase === 'result'
+      ? session.dealer
+      : [session.dealer[0], { rank: '?', suit: '' }];
+    const dealerScore = session.phase === 'result' ? handScore(session.dealer) : '?';
+    const playerScore = handScore(session.player);
+    const resultClass = session.result === 'win' ? ' win' : session.result === 'lose' ? ' lose' : session.result === 'push' ? ' push' : '';
+    const resultText = session.result === 'win'
+      ? signedMoney(game.winAmount || game.bet || 0)
+      : session.result === 'lose'
+        ? signedMoney(-(game.loseAmount || game.bet || 0))
+        : session.result === 'push'
+          ? 'PUSH'
+          : '히트할지 멈출지 선택';
+    return `
+      <div class="ph2-gamble ph2-blackjack">
+        <div class="ph2-gamble-app">
+          <span class="ph2-gamble-logo"></span>
+          <span class="ph2-gamble-title">${esc(game.title || 'BLACKJACK')}</span>
+          <span class="ph2-gamble-right">${esc(game.badge || 'LIVE')}</span>
+        </div>
+        <div class="ph2-bj-table">
+          <div class="ph2-bj-row dealer">
+            <span>DEALER <b>${esc(dealerScore)}</b></span>
+            <div>${dealerVisible.map(cardHTML).join('')}</div>
+          </div>
+          <div class="ph2-bj-pot">
+            <span>BET</span>
+            <b>${money(game.bet || 0)}</b>
+          </div>
+          <div class="ph2-bj-row player">
+            <span>PLAYER <b>${esc(playerScore)}</b></span>
+            <div>${session.player.map(cardHTML).join('')}</div>
+          </div>
+        </div>
+        <div class="ph2-gamble-panel${resultClass}">
+          <span>${esc(session.phase === 'result' ? '결과' : '플레이 중')}</span>
+          <b>${esc(resultText)}</b>
+          <small>${esc(session.phase === 'result' ? '결과가 확정됐다.' : '카드를 더 받을지, 여기서 멈출지 직접 고른다.')}</small>
+        </div>
+        <div class="ph2-game-actions">
+          ${session.phase === 'play' ? `
+            <button type="button" class="ph2-game-btn" data-phone-act="bj:hit">히트</button>
+            <button type="button" class="ph2-game-btn primary" data-phone-act="bj:stand">스탠드</button>
+          ` : `
+            <button type="button" class="ph2-game-btn primary" data-phone-act="bj:continue">코인 레버리지방 알림을 누른다</button>
+          `}
+        </div>
+      </div>`;
+  }
+
+  function screenCasino(cfg) {
+    const casino = cfg.casino || {};
+    const tables = casino.tables || [
+      ['BLACKJACK', '최소 5천만원'],
+      ['BACCARAT', '점검중'],
+      ['ROULETTE', '준비중'],
+    ];
+    return `
+      <div class="ph2-gamble ph2-casino">
+        <div class="ph2-gamble-app">
+          <span class="ph2-gamble-logo"></span>
+          <span class="ph2-gamble-title">${esc(casino.title || 'VIP 카지노')}</span>
+          <span class="ph2-gamble-right">${esc(casino.badge || '입장 가능')}</span>
+        </div>
+        <div class="ph2-casino-hero">
+          <span>${esc(casino.kicker || 'LADDER CLEAR BONUS')}</span>
+          <b>${esc(casino.headline || '블랙잭 테이블 오픈')}</b>
+          <small>${esc(casino.copy || '방금 이긴 회원에게만 열리는 고배율 테이블입니다.')}</small>
+        </div>
+        <div class="ph2-casino-tables">
+          ${tables.map(([name, meta], i) => `
+            <div class="${i === 0 ? 'open' : ''}">
+              <b>${esc(name)}</b><span>${esc(meta)}</span>
+            </div>`).join('')}
+        </div>
+        ${phoneChoicesHTML(cfg)}
+      </div>`;
+  }
+
+  function screenBlackjack(cfg) {
+    const bj = cfg.blackjack || {};
+    const dealer = Array.isArray(bj.dealer) ? bj.dealer : ['6', '?'];
+    const player = Array.isArray(bj.player) ? bj.player : ['A', '7'];
+    const resultClass = bj.result === 'win' ? ' win' : bj.result === 'lose' ? ' lose' : bj.result === 'push' ? ' push' : '';
+    return `
+      <div class="ph2-gamble ph2-blackjack">
+        <div class="ph2-gamble-app">
+          <span class="ph2-gamble-logo"></span>
+          <span class="ph2-gamble-title">${esc(bj.title || 'BLACKJACK')}</span>
+          <span class="ph2-gamble-right">${esc(bj.badge || 'LIVE')}</span>
+        </div>
+        <div class="ph2-bj-table">
+          <div class="ph2-bj-row dealer">
+            <span>DEALER <b>${esc(bj.dealerScore || '?')}</b></span>
+            <div>${dealer.map(cardHTML).join('')}</div>
+          </div>
+          <div class="ph2-bj-pot">
+            <span>BET</span>
+            <b>${esc(bj.betLabel || money(bj.bet || 0))}</b>
+          </div>
+          <div class="ph2-bj-row player">
+            <span>PLAYER <b>${esc(bj.playerScore || '')}</b></span>
+            <div>${player.map(cardHTML).join('')}</div>
+          </div>
+        </div>
+        <div class="ph2-gamble-panel${resultClass}">
+          <span>${esc(bj.phase || '선택')}</span>
+          <b>${esc(bj.resultText || '카드를 받을지 멈출지 선택')}</b>
+          <small>${esc(bj.hint || '딜러의 오픈 카드를 보고 판단하세요.')}</small>
+        </div>
+        ${phoneChoicesHTML(cfg)}
+      </div>`;
+  }
+
   const SCREENS = {
     ringing: screenRinging,
     missed: screenRecents,
     recents: screenRecents,
     messages: screenMessages,
+    chatRooms: screenChatRooms,
+    apps: screenApps,
+    wealthHub: screenWealthHub,
+    assetStore: screenAssetStore,
+    bankApp: screenBankApp,
+    snsFeed: screenSnsFeed,
+    youtube: screenYoutube,
     market: screenMarket,
     community: screenCommunity,
     orderDecision: screenOrderDecision,
     orderFilled: screenOrderFilled,
     marketResult: screenMarketResult,
     missedResult: screenMissedResult,
+    oddEvenGame: screenOddEvenGame,
+    ladder: screenLadder,
+    casino: screenCasino,
+    blackjackGame: screenBlackjackGame,
+    blackjack: screenBlackjack,
   };
 
   function screenHTML(kind, cfg, stateSnapshot) {
@@ -443,11 +1218,12 @@ window.PhoneWidget = (function () {
   /* ---------- 기기(베젤+상태바+화면) ---------- */
   function deviceHTML(cfg, stateSnapshot) {
     const first = cfg.screen || (cfg.sequence && cfg.sequence[0]) || 'ringing';
+    const frameClass = cfg.frame === 'desktop' || cfg.device === 'desktop' ? ' ph2-device-desktop' : '';
     const kindClass = first === 'messages' ? ' ph2-device-msg'
-      : ['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult'].includes(first) ? ' ph2-device-stock'
+      : ['chatRooms', 'apps', 'wealthHub', 'assetStore', 'bankApp', 'snsFeed', 'youtube', 'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult', 'oddEvenGame', 'ladder', 'casino', 'blackjackGame', 'blackjack'].includes(first) ? ' ph2-device-stock'
       : '';
     return `
-      <div class="ph2-device${kindClass}" data-state="${esc(first)}">
+      <div class="ph2-device${kindClass}${frameClass}" data-state="${esc(first)}">
         ${statusbarHTML(cfg.statusbar)}
         <div class="ph2-screen">${screenHTML(first, cfg, stateSnapshot)}</div>
         <div class="ph2-navbar"></div>
@@ -475,6 +1251,90 @@ window.PhoneWidget = (function () {
         if (done) done();
       });
     }, 260);
+  }
+
+  function renderPhoneScreen(overlay, cfg, stateSnapshot) {
+    const device = overlay && overlay.querySelector('.ph2-device');
+    const screen = device && device.querySelector('.ph2-screen');
+    if (!screen) return;
+    const kind = firstScreen(cfg) || 'ringing';
+    screen.innerHTML = screenHTML(kind, cfg, stateSnapshot);
+    device.dataset.state = kind;
+  }
+
+  function dispatchGameResult(stageEl, label, next, effects) {
+    if (!next) return;
+    stageEl.dispatchEvent(new CustomEvent('phone:action', {
+      bubbles: true,
+      detail: {
+        action: 'gameResult',
+        label,
+        next,
+        effects: effects || {},
+      },
+    }));
+  }
+
+  function handleOddEvenAction(stageEl, cfg, action, overlay, stateSnapshot) {
+    if (!cfg.oddEvenGame || !action.startsWith('odd:')) return false;
+    const game = cfg.oddEvenGame;
+    const session = oddEvenState(cfg);
+
+    if (action.startsWith('odd:pick:') && session.phase === 'pick') {
+      const pick = action.split(':')[2] === 'even' ? 'even' : 'odd';
+      const roll = randomInt(99) + 1;
+      const parity = roll % 2 ? 'odd' : 'even';
+      const won = pick === parity;
+      session.phase = 'result';
+      session.pick = pick;
+      session.roll = roll;
+      session.result = won ? 'win' : 'lose';
+      session.next = won ? game.winNext : game.loseNext;
+      session.effects = won
+        ? gameEffects(game.winEffects, { intro_gamble_played: true, intro_gamble_pick: pick, intro_gamble_result: 'win' })
+        : gameEffects(game.loseEffects, { intro_gamble_played: true, intro_gamble_pick: pick, intro_gamble_result: 'lose' });
+      renderPhoneScreen(overlay, cfg, stateSnapshot);
+      return true;
+    }
+
+    if (action === 'odd:continue' && session.phase === 'result') {
+      dispatchGameResult(stageEl, '홀짝 결과', session.next, session.effects);
+      return true;
+    }
+
+    return true;
+  }
+
+  function handleBlackjackGameAction(stageEl, cfg, action, overlay, stateSnapshot) {
+    if (!cfg.blackjackGame || !action.startsWith('bj:')) return false;
+    const session = blackjackState(cfg);
+
+    if (action === 'bj:hit' && session.phase === 'play') {
+      session.player.push(drawCard(session));
+      if (handScore(session.player) > 21) {
+        settleBlackjack(cfg, session, 'lose');
+      }
+      renderPhoneScreen(overlay, cfg, stateSnapshot);
+      return true;
+    }
+
+    if (action === 'bj:stand' && session.phase === 'play') {
+      finishDealer(cfg, session);
+      renderPhoneScreen(overlay, cfg, stateSnapshot);
+      return true;
+    }
+
+    if (action === 'bj:continue' && session.phase === 'result') {
+      const label = session.result === 'win'
+        ? '블랙잭 승리'
+        : session.result === 'lose'
+          ? '블랙잭 패배'
+          : '블랙잭 무승부';
+      dispatchGameResult(stageEl, label, session.next, session.effects);
+      return true;
+    }
+
+    return true;
   }
 
   /* ---------- 시퀀스 진행 ---------- */
@@ -540,7 +1400,11 @@ window.PhoneWidget = (function () {
       const actionEl = event.target.closest('[data-phone-act]');
       if (actionEl) {
         event.stopPropagation();
-        handlePhoneAction(stageEl, cfg, actionEl.dataset.phoneAct);
+        const handled = handleOddEvenAction(stageEl, cfg, actionEl.dataset.phoneAct, overlay, stateSnapshot)
+          || handleBlackjackGameAction(stageEl, cfg, actionEl.dataset.phoneAct, overlay, stateSnapshot);
+        if (!handled) {
+          handlePhoneAction(stageEl, cfg, actionEl.dataset.phoneAct);
+        }
         return;
       }
       if (overlay.classList.contains('ph2-block') && !overlay.classList.contains('ph2-done')) {
@@ -559,7 +1423,7 @@ window.PhoneWidget = (function () {
     setTimeout(() => {
       if (!overlay.isConnected) return;
       overlay.classList.add('ph2-show');
-      if (hasDeviceChoices) return;
+      if (hasDeviceChoices || usesManualPhoneActions(cfg)) return;
       runSequence(overlay, cfg, stateSnapshot, () => {
         overlay.classList.add('ph2-done');
         const afterFlowEffects = cfg.afterFlowEffects || cfg.missedEffects;

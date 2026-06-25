@@ -85,6 +85,35 @@
   width: min(82%, 318px);
 }
 
+.ph2-device-desktop {
+  width: min(92%, 430px);
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  padding: 8px;
+  background:
+    linear-gradient(160deg, rgba(57, 60, 68, 0.92), rgba(9, 10, 13, 0.98) 64%),
+    #111318;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.62),
+    0 28px 70px rgba(0, 0, 0, 0.66);
+}
+
+.ph2-device-desktop .ph2-screen {
+  margin-top: 4px;
+  border-radius: 12px;
+}
+
+.ph2-device-desktop .ph2-navbar {
+  display: none;
+}
+
+.ph2-device-desktop .ph2-status {
+  height: 15px;
+  padding: 0 8px;
+  font-size: 8px;
+}
+
 /* ---------- 상태바 ---------- */
 .ph2-status {
   flex: 0 0 auto;
@@ -476,6 +505,188 @@
   background: #e6f0ff;
 }
 
+/* ===== 채팅방 목록 ===== */
+.ph2-chatrooms {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f7f3e8;
+  color: #17140e;
+  overflow: hidden;
+}
+
+.ph2-chat-head {
+  flex: 0 0 auto;
+  min-height: 58px;
+  padding: 13px 13px 10px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  background: #fee25b;
+  border-bottom: 1px solid rgba(23, 20, 14, 0.12);
+}
+
+.ph2-chat-head b,
+.ph2-chat-head span {
+  display: block;
+}
+
+.ph2-chat-head b {
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.ph2-chat-head span {
+  margin-top: 2px;
+  color: rgba(23, 20, 14, 0.62);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-chat-head em {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(23, 20, 14, 0.86);
+  color: #fee25b;
+  font-size: 7.5px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+}
+
+.ph2-chat-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ph2-chat-row {
+  position: relative;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(23, 20, 14, 0.08);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.ph2-chat-row.ph2-chat-warm {
+  background: #fff7dc;
+}
+
+.ph2-chat-row.ph2-chat-risk {
+  background: #fff0ef;
+}
+
+.ph2-chat-row.ph2-chat-stock {
+  background: #eef5ff;
+}
+
+.ph2-chat-row.ph2-chat-muted {
+  opacity: 0.62;
+}
+
+.ph2-chat-row.ph2-chat-read {
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.ph2-chat-row.ph2-chat-read .ph2-chat-avatar,
+.ph2-chat-row.ph2-chat-read .ph2-chat-main {
+  opacity: 0.72;
+}
+
+.ph2-chat-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: #27251f;
+  color: #fee25b;
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.ph2-chat-warm .ph2-chat-avatar {
+  background: #e65f84;
+  color: #fff;
+}
+
+.ph2-chat-risk .ph2-chat-avatar {
+  background: #d83b32;
+  color: #fff;
+}
+
+.ph2-chat-stock .ph2-chat-avatar {
+  background: #2f74d0;
+  color: #fff;
+}
+
+.ph2-chat-main {
+  min-width: 0;
+}
+
+.ph2-chat-top {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ph2-chat-top b {
+  min-width: 0;
+  overflow: hidden;
+  color: #15120c;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ph2-chat-top time {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: rgba(23, 20, 14, 0.45);
+  font-size: 7.5px;
+  font-weight: 900;
+}
+
+.ph2-chat-main p {
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: rgba(23, 20, 14, 0.62);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.ph2-chat-badge {
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e23b30;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-chat-lock {
+  display: block;
+  margin-top: 3px;
+  color: rgba(23, 20, 14, 0.46);
+  font-size: 7.5px;
+  font-weight: 900;
+}
+
 /* ===== 주식앱 / 종토방 화면 ===== */
 .ph2-stock {
   height: 100%;
@@ -716,6 +927,350 @@
   background: #eef0f3;
 }
 
+/* ===== 유튜브(FOMO 뉴스) 화면 ===== */
+.ph2-yt {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f0f;
+  color: #ffffff;
+  overflow: hidden;
+}
+.ph2-yt-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+}
+.ph2-yt-logo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+}
+.ph2-yt-logo i {
+  width: 17px;
+  height: 12px;
+  border-radius: 3px;
+  background: #ff0000;
+  position: relative;
+}
+.ph2-yt-logo i::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-left: 5px solid #ffffff;
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+}
+.ph2-yt-icons {
+  color: #ffffff;
+  opacity: 0.9;
+  font-size: 12px;
+  letter-spacing: 4px;
+}
+.ph2-yt-cats {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  padding: 2px 10px 8px;
+  overflow: hidden;
+}
+.ph2-yt-cat {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: #272727;
+  color: #f1f1f1;
+  white-space: nowrap;
+}
+.ph2-yt-cat.on {
+  background: #ffffff;
+  color: #0f0f0f;
+}
+.ph2-yt-feed {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.ph2-yt-thumb-wrap {
+  position: relative;
+  width: 100%;
+}
+.ph2-yt-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #000000;
+}
+.ph2-yt-thumb-ph {
+  aspect-ratio: 16 / 9;
+  background: #222222;
+}
+.ph2-yt-dur {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  background: rgba(0, 0, 0, 0.82);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.ph2-yt-meta {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+}
+.ph2-yt-title {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #ffffff;
+  word-break: keep-all;
+}
+.ph2-yt-sub {
+  font-size: 10px;
+  color: #aaaaaa;
+  margin-top: 3px;
+}
+.ph2-yt-shorts-h {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 5px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+}
+.ph2-yt-shorts-h::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: #ff0000;
+}
+.ph2-yt-shorts {
+  display: flex;
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+.ph2-yt-short {
+  flex: 1 1 0;
+  aspect-ratio: 9 / 16;
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  align-items: flex-end;
+  background: #1d1d1d;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.25;
+  word-break: keep-all;
+}
+.ph2-yt-short.t-red { background: #3a1414; }
+.ph2-yt-short.t-blue { background: #13233a; }
+.ph2-yt-short.t-gold { background: #3a2f12; }
+
+/* ===== 은행 앱(BG뱅크) — 거래내역·입출금 알림·잔액 ===== */
+.ph2-bank {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f4f5f7;
+  color: #191c20;
+}
+.ph2-bank-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #eceef2;
+}
+.ph2-bank-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #0064ff;
+}
+.ph2-bank-brand i {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  background: #0064ff;
+}
+.ph2-bank-ico { color: #8a9099; font-size: 16px; font-weight: 900; }
+.ph2-bank-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+}
+.ph2-bank-push {
+  margin-bottom: 10px;
+  border-radius: 12px;
+  padding: 8px 11px;
+  background: #ffffff;
+  border: 1px solid #e3e6ea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: ph2-rec-in 0.5s ease both;
+}
+.ph2-bank-push-app {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 900;
+  color: #8a9099;
+}
+.ph2-bank-push-app i { width: 9px; height: 9px; border-radius: 3px; background: #0064ff; }
+.ph2-bank-push b { display: block; margin-top: 3px; font-size: 13px; font-weight: 900; color: #0064ff; }
+.ph2-bank-push.out b { color: #e8392f; }
+.ph2-bank-push small { display: block; margin-top: 2px; color: #8a9099; font-size: 10px; font-weight: 700; }
+.ph2-bank-card {
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 14px;
+  border: 1px solid #eceef2;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+.ph2-bank-acc { font-size: 11px; font-weight: 800; color: #5a616b; }
+.ph2-bank-acc span { color: #9aa0a8; font-weight: 700; margin-left: 4px; }
+.ph2-bank-balance {
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #191c20;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.ph2-bank-quick { display: flex; gap: 6px; margin-top: 12px; }
+.ph2-bank-quick span {
+  flex: 1;
+  text-align: center;
+  padding: 7px 0;
+  border-radius: 9px;
+  background: #f0f2f5;
+  font-size: 10px;
+  font-weight: 900;
+  color: #3a4048;
+}
+.ph2-bank-tx-head { margin: 14px 4px 6px; font-size: 11px; font-weight: 900; color: #5a616b; }
+.ph2-bank-tx-list { display: flex; flex-direction: column; }
+.ph2-bank-tx {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 4px;
+  border-bottom: 1px solid #eef0f3;
+}
+.ph2-bank-tx-l b { font-size: 12px; font-weight: 800; color: #23262b; }
+.ph2-bank-tx-l small { display: block; margin-top: 2px; color: #9aa0a8; font-size: 9px; font-weight: 700; }
+.ph2-bank-tx-r { text-align: right; }
+.ph2-bank-tx-r strong { font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.ph2-bank-tx-r strong.in { color: #0064ff; }
+.ph2-bank-tx-r strong.out { color: #e8392f; }
+.ph2-bank-tx-r small { display: block; margin-top: 2px; color: #b3b8bf; font-size: 9px; font-weight: 700; }
+.ph2-bank-actions { flex: 0 0 auto; padding: 8px; background: #ffffff; border-top: 1px solid #eceef2; }
+.ph2-bank-cta {
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 11px;
+  background: #0064ff;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+}
+.ph2-bank-cta:active { background: #0052cc; }
+
+/* ===== VIP 자산상점(BLACK 멤버십) — 카드 + 구매하기 ===== */
+.ph2-shop {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0e0f12;
+  color: #f5efe2;
+}
+.ph2-shop-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(245, 239, 226, 0.12);
+}
+.ph2-shop-brand { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 900; color: #d8b45d; }
+.ph2-shop-brand i { width: 13px; height: 13px; border-radius: 4px; background: linear-gradient(135deg, #e7c879, #b8923c); }
+.ph2-shop-bal { font-size: 10px; font-weight: 800; color: #9a9384; }
+.ph2-shop-title { padding: 11px 12px 6px; }
+.ph2-shop-title b { font-size: 15px; font-weight: 900; color: #f5efe2; }
+.ph2-shop-title small { display: block; margin-top: 2px; color: #9a9384; font-size: 10px; }
+.ph2-shop-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ph2-shop-card {
+  display: flex;
+  gap: 10px;
+  padding: 9px;
+  border-radius: 12px;
+  background: #181a1e;
+  border: 1px solid rgba(245, 239, 226, 0.1);
+}
+.ph2-shop-card.owned { opacity: 0.55; }
+.ph2-shop-thumb {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #0b0c0f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ph2-shop-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ph2-shop-thumb-ph { color: #5a5750; font-size: 9px; font-weight: 900; }
+.ph2-shop-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.ph2-shop-kind { font-size: 9px; font-weight: 900; color: #d8b45d; letter-spacing: 0.05em; }
+.ph2-shop-name { font-size: 13px; font-weight: 900; margin-top: 1px; }
+.ph2-shop-meta { color: #9a9384; font-size: 10px; margin-top: 2px; }
+.ph2-shop-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 6px; }
+.ph2-shop-price { font-size: 12px; font-weight: 900; color: #f5efe2; font-variant-numeric: tabular-nums; }
+.ph2-shop-buy {
+  min-width: 52px;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: #d8b45d;
+  color: #17130b;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.ph2-shop-buy:active { background: #c2a04f; }
+.ph2-shop-owned { font-size: 11px; font-weight: 900; color: #1db089; }
+.ph2-shop-lock { font-size: 10px; font-weight: 800; color: #6a665c; }
+
 .ph2-community-feed {
   position: relative;
   flex: 1 1 auto;
@@ -853,6 +1408,742 @@
   line-height: 1.45;
 }
 
+.ph2-apps {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 38%),
+    #11151c;
+  color: #f5efe2;
+}
+
+.ph2-apps-head b,
+.ph2-apps-head span {
+  display: block;
+}
+
+.ph2-apps-head b {
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.ph2-apps-head span {
+  margin-top: 4px;
+  color: #9aa3af;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ph2-app-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ph2-app-tile {
+  min-height: 116px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid rgba(245, 239, 226, 0.13);
+  border-radius: 14px;
+  background: #202630;
+  color: #f5efe2;
+  text-align: left;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2);
+}
+
+.ph2-app-tile:active {
+  transform: translateY(1px);
+}
+
+.ph2-app-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #e6bd5b;
+  color: #14171d;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.ph2-app-tile.gamble .ph2-app-icon {
+  background: #e23b30;
+  color: #fff;
+}
+
+.ph2-app-tile.stock .ph2-app-icon {
+  background: #4d8cff;
+  color: #fff;
+}
+
+.ph2-app-tile b {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ph2-app-tile small {
+  min-height: 24px;
+  color: #aab2bf;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.ph2-wealth,
+.ph2-asset-store,
+.ph2-sns {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 12px;
+  background:
+    linear-gradient(180deg, rgba(216, 180, 93, 0.16), transparent 34%),
+    #101318;
+  color: #f6f0e2;
+  overflow: hidden;
+}
+
+.ph2-wealth-head,
+.ph2-asset-head,
+.ph2-sns-head {
+  flex: 0 0 auto;
+}
+
+.ph2-wealth-head span,
+.ph2-asset-head span,
+.ph2-sns-head span,
+.ph2-sns-profile span {
+  display: block;
+  color: #d8b45d;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.ph2-wealth-head b,
+.ph2-asset-head b,
+.ph2-sns-head b {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+.ph2-wealth-head small,
+.ph2-asset-head small {
+  display: block;
+  margin-top: 4px;
+  color: #9ea7b4;
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.ph2-wealth-balance {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ph2-wealth-balance div,
+.ph2-wealth-app,
+.ph2-wealth-steps div,
+.ph2-asset-item,
+.ph2-sns-profile,
+.ph2-sns-post,
+.ph2-sns-income {
+  border: 1px solid rgba(246, 240, 226, 0.11);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.ph2-wealth-balance div {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
+}
+
+.ph2-wealth-balance span {
+  flex: 0 0 auto;
+  color: #8993a2;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.ph2-wealth-steps span,
+.ph2-asset-item span,
+.ph2-sns-post span,
+.ph2-sns-income span {
+  display: block;
+  color: #8993a2;
+  font-size: 7px;
+  font-weight: 950;
+}
+
+.ph2-wealth-balance b {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1.1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+}
+
+.ph2-wealth-apps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.ph2-wealth-app {
+  min-width: 0;
+  min-height: 76px;
+  padding: 8px 6px;
+  border-radius: 12px;
+}
+
+.ph2-wealth-app span {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #d8b45d;
+  color: #15171c;
+  font-size: 8px;
+  font-weight: 950;
+}
+
+.ph2-wealth-app b,
+.ph2-asset-item b,
+.ph2-sns-profile b,
+.ph2-sns-post b,
+.ph2-sns-income b {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1.25;
+  word-break: keep-all;
+}
+
+.ph2-wealth-app small,
+.ph2-asset-item small,
+.ph2-sns-post small {
+  display: block;
+  margin-top: 4px;
+  color: #9ea7b4;
+  font-size: 7px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.ph2-wealth-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: auto;
+}
+
+.ph2-wealth-steps div {
+  min-width: 0;
+  padding: 6px 4px;
+  border-radius: 9px;
+  text-align: center;
+}
+
+.ph2-wealth-steps b {
+  display: block;
+  margin-top: 3px;
+  color: #f6f0e2;
+  font-size: 8px;
+  font-weight: 950;
+}
+
+.ph2-asset-list,
+.ph2-sns-posts {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: hidden;
+}
+
+.ph2-asset-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border-radius: 12px;
+}
+
+.ph2-asset-item.owned {
+  border-color: rgba(56, 189, 130, 0.42);
+  background: rgba(56, 189, 130, 0.10);
+}
+
+.ph2-asset-item strong {
+  max-width: 102px;
+  color: #ffd86b;
+  font-size: 8px;
+  font-weight: 950;
+  line-height: 1.25;
+  text-align: right;
+  word-break: keep-all;
+}
+
+.ph2-sns-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ph2-sns-head b {
+  margin-top: 0;
+  font-size: 17px;
+}
+
+.ph2-sns-head span {
+  padding-top: 3px;
+  color: #9ea7b4;
+  text-align: right;
+}
+
+.ph2-sns-profile,
+.ph2-sns-post,
+.ph2-sns-income {
+  padding: 9px;
+  border-radius: 12px;
+}
+
+.ph2-sns-post {
+  position: relative;
+}
+
+.ph2-sns-post em {
+  position: absolute;
+  right: 9px;
+  top: 9px;
+  color: #ff6f91;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.ph2-sns-income {
+  margin-top: auto;
+  border-color: rgba(216, 180, 93, 0.38);
+  background: rgba(216, 180, 93, 0.10);
+}
+
+.ph2-sns-income b {
+  color: #ffd86b;
+  font-size: 14px;
+}
+
+.ph2-gamble {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #101318;
+  color: #f5efe2;
+  overflow: hidden;
+}
+
+.ph2-gamble-app {
+  flex: 0 0 auto;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border-bottom: 1px solid rgba(245, 239, 226, 0.11);
+  background: #171b21;
+}
+
+.ph2-gamble-logo {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #e6bd5b, #e23b30);
+  box-shadow: 0 0 14px rgba(230, 189, 91, 0.22);
+}
+
+.ph2-gamble-title {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ph2-gamble-right {
+  margin-left: auto;
+  color: #e6bd5b;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-game-actions {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.ph2-game-actions .ph2-game-btn:only-child,
+.ph2-game-actions .ph2-game-btn.primary:only-child {
+  grid-column: 1 / -1;
+}
+
+.ph2-game-btn {
+  min-height: 40px;
+  border: 1px solid rgba(245, 239, 226, 0.16);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f5efe2;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.ph2-game-btn.primary {
+  border-color: rgba(230, 189, 91, 0.58);
+  background: rgba(230, 189, 91, 0.15);
+  color: #fff5d8;
+}
+
+.ph2-game-btn:active {
+  transform: translateY(1px);
+}
+
+.ph2-oe-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  padding: 16px 14px 8px;
+}
+
+.ph2-oe-number {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(230, 189, 91, 0.36);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.18), transparent 36%),
+    #202630;
+  color: #e6bd5b;
+  font-size: 48px;
+  font-weight: 900;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.28);
+}
+
+.ph2-oe-number.is-open {
+  color: #ff6b5d;
+}
+
+.ph2-oe-meta {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ph2-oe-meta span {
+  padding: 8px;
+  border: 1px solid rgba(245, 239, 226, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #9aa3af;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-oe-meta b {
+  display: block;
+  margin-top: 3px;
+  color: #f5efe2;
+  font-size: 13px;
+}
+
+.ph2-ladder-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 8px;
+}
+
+.ph2-ladder-top,
+.ph2-ladder-bottom {
+  display: flex;
+  justify-content: space-between;
+  color: #8d96a3;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ph2-ladder-top span {
+  min-width: 52px;
+  padding: 5px 0;
+  border: 1px solid rgba(245, 239, 226, 0.13);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.ph2-ladder-top span.on {
+  border-color: rgba(230, 189, 91, 0.78);
+  color: #f5efe2;
+  background: rgba(230, 189, 91, 0.12);
+}
+
+.ph2-ladder-lines {
+  position: relative;
+  flex: 1 1 auto;
+  margin: 9px 24px;
+}
+
+.ph2-ladder-lines i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: #3b4350;
+}
+
+.ph2-ladder-lines i:first-child { left: 18%; }
+.ph2-ladder-lines i:nth-child(2) { right: 18%; }
+
+.ph2-ladder-lines b {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  height: 3px;
+  border-radius: 2px;
+  background: #566171;
+}
+
+.ph2-ladder-lines b.right {
+  transform: skewY(13deg);
+}
+
+.ph2-ladder-lines b.left {
+  transform: skewY(-13deg);
+}
+
+.ph2-ladder-lines em {
+  position: absolute;
+  top: 8%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e23b30;
+  box-shadow: 0 0 18px rgba(226, 59, 48, 0.55);
+  animation: ph2-ladder-drop 2.2s ease-in-out infinite;
+}
+
+.ph2-ladder-lines em.left { left: calc(18% - 5px); }
+.ph2-ladder-lines em.right { right: calc(18% - 5px); }
+
+@keyframes ph2-ladder-drop {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(128px); }
+  100% { transform: translateY(0); }
+}
+
+.ph2-gamble-panel {
+  flex: 0 0 auto;
+  margin: 0 10px 10px;
+  padding: 10px;
+  border: 1px solid rgba(245, 239, 226, 0.13);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.ph2-gamble-panel span,
+.ph2-gamble-panel small {
+  display: block;
+  color: #9aa3af;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-gamble-panel b {
+  display: block;
+  margin: 3px 0;
+  color: #f5efe2;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.ph2-gamble-panel.win b { color: #ff6b5d; }
+.ph2-gamble-panel.lose b { color: #7fb0ff; }
+.ph2-gamble-panel.push b { color: #e6bd5b; }
+
+.ph2-casino-hero {
+  flex: 0 0 auto;
+  margin: 12px 10px 9px;
+  padding: 14px 12px;
+  border: 1px solid rgba(230, 189, 91, 0.42);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(226, 59, 48, 0.22), transparent 58%),
+    #171b21;
+}
+
+.ph2-casino-hero span,
+.ph2-casino-hero small {
+  display: block;
+  color: #aab2bf;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-casino-hero b {
+  display: block;
+  margin: 6px 0;
+  color: #f5efe2;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ph2-casino-tables {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 0 10px 10px;
+}
+
+.ph2-casino-tables div {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid rgba(245, 239, 226, 0.1);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.ph2-casino-tables div.open {
+  border-color: rgba(230, 189, 91, 0.5);
+}
+
+.ph2-casino-tables b,
+.ph2-casino-tables span {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ph2-casino-tables span {
+  color: #9aa3af;
+}
+
+.ph2-bj-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 10px;
+  padding: 12px;
+  border: 1px solid rgba(245, 239, 226, 0.12);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(29, 142, 96, 0.35), transparent 62%),
+    #10231e;
+}
+
+.ph2-bj-row span {
+  display: flex;
+  justify-content: space-between;
+  color: #b7c0cd;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-bj-row > div {
+  display: flex;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.ph2-bj-row.player > div {
+  justify-content: flex-end;
+}
+
+.ph2-bj-pot {
+  align-self: center;
+  min-width: 78px;
+  padding: 7px 10px;
+  border: 1px solid rgba(230, 189, 91, 0.45);
+  border-radius: 999px;
+  background: rgba(11, 14, 18, 0.52);
+  text-align: center;
+}
+
+.ph2-bj-pot span,
+.ph2-bj-pot b {
+  display: block;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-bj-pot b {
+  color: #e6bd5b;
+}
+
+.ph2-card {
+  width: 38px;
+  height: 54px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #f7f1e6;
+  color: #16181c;
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.28);
+}
+
+.ph2-card.red {
+  color: #c62b20;
+}
+
+.ph2-card b {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.ph2-card i {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .ph2-fill-mark {
   height: 70px;
   display: flex;
@@ -870,6 +2161,7 @@
   .ph2-device { width: min(70%, 210px); }
   .ph2-device-msg { width: min(82%, 246px); }
   .ph2-device-stock { width: min(90%, 270px); }
+  .ph2-device-desktop { width: min(94%, 330px); }
   .ph2-msg-bubble { font-size: 10px; }
   .ph2-msg-choice { font-size: 9px; }
 }

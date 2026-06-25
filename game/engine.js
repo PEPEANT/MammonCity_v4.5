@@ -14,14 +14,17 @@
 const ENGINE_PARAMS = new URLSearchParams(window.location.search);
 const PREVIEW_SCENE = ENGINE_PARAMS.get('preview') || '';
 const PREVIEW_MODE = !!PREVIEW_SCENE;
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 const SAVE_KEY = 'baegeumdosi_save_v2';
 const LEGACY_SAVE_KEY = 'baegeumdosi_save_v1';
 const STARTING_CASH = 300000;
-const MAX_ANGER = 5;
-const MAX_HUMANITY = 5;
+const MAX_HAPPY = 5;
+const START_HAPPY = 0;
 const MAX_HISTORY = 50;
-const STOCK_PHONE_SCREENS = new Set(['market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult']);
+const MAX_BRANCH_SAVES = 80;
+const MAX_MONEY_CUES = 3;
+// assetStore/bankApp 은 화면 안의 버튼(구매하기/확인)으로 직접 진행 → dialogue 중복 방지 위해 제외.
+const STOCK_PHONE_SCREENS = new Set(['chatRooms', 'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult', 'ladder', 'casino', 'blackjack', 'wealthHub', 'snsFeed']);
 const ENDING_SCENE_CHAINS = {
   e_dirt: ['ed_dirt_room', 'ed_dirt_phone', 'e_dirt'],
   e_han: ['ed_han_still', 'ed_han_phone', 'e_han'],
@@ -45,6 +48,8 @@ els.stage.addEventListener('phone:action', handlePhoneAction);
 
 let state = initialState();
 let renderToken = 0;
+let pendingMoneyCues = [];
+let lastSaveError = '';
 
 function newGame() {
   return {
@@ -57,7 +62,7 @@ function newGame() {
       debt: 0,
       assets: 0,
     },
-    meters: { anger: 0, humanity: MAX_HUMANITY },
+    meters: { happy: START_HAPPY },
     affection: {},
     flags: {},
     unlocked: [],
@@ -86,11 +91,8 @@ function initialState() {
 }
 
 function applyPreviewOverrides(target) {
-  const anger = ENGINE_PARAMS.get('anger');
-  if (anger != null) target.meters.anger = clampAnger(anger);
-
-  const humanity = ENGINE_PARAMS.get('humanity');
-  if (humanity != null) target.meters.humanity = clampHumanity(humanity);
+  const happy = ENGINE_PARAMS.get('happy');
+  if (happy != null) target.meters.happy = clampHappy(happy);
 
   const cash = ENGINE_PARAMS.get('cash');
   if (cash != null && !Number.isNaN(Number(cash))) target.economy.cash = Number(cash);
@@ -119,9 +121,7 @@ function normalizeState(raw) {
     next.player = { ...next.player, ...(raw.player || {}) };
     next.progress = { ...next.progress, ...(raw.progress || {}) };
     next.economy = { ...next.economy, ...(raw.economy || {}) };
-    next.meters = { ...next.meters, ...(raw.meters || {}) };
-    next.meters.anger = clampAnger(next.meters.anger);
-    next.meters.humanity = clampHumanity(next.meters.humanity);
+    next.meters = { happy: normalizeHappy(raw) };
     next.affection = { ...(raw.affection || {}) };
     next.flags = { ...(raw.flags || {}) };
     next.unlocked = Array.isArray(raw.unlocked) ? [...raw.unlocked] : [];
@@ -129,6 +129,7 @@ function normalizeState(raw) {
     next.branchSaves = normalizeBranchSaves(raw.branchSaves);
     next.records = { ...next.records, ...(raw.records || {}) };
     next.progress.scene = remapSceneId(next.progress.scene, next);
+    migrateSeedMoney(next, raw.version || 0);
     return next;
   }
 
@@ -139,8 +140,42 @@ function normalizeState(raw) {
   next.unlocked = Array.isArray(raw.unlocked) ? [...raw.unlocked] : [];
   next.branchSaves = normalizeBranchSaves(raw.branchSaves);
   next.progress.scene = remapSceneId(next.progress.scene, next);
+  migrateSeedMoney(next, raw.version || 0);
   updateRecords(next);
   return next;
+}
+
+function normalizeHappy(raw) {
+  const rawHappy = raw && raw.meters && typeof raw.meters.happy === 'number'
+    ? raw.meters.happy
+    : START_HAPPY;
+  if (raw && raw.version >= 3) return clampHappy(rawHappy);
+
+  // v2까지는 기본 행복도가 3이라, 기존 저장은 0 기준으로 낮춰서 보정한다.
+  return clampHappy(Math.max(0, rawHappy - 3));
+}
+
+function migrateSeedMoney(target, version) {
+  if (!target || version >= 3) return;
+  const flags = target.flags || {};
+  const scene = target.progress && target.progress.scene ? target.progress.scene : '';
+  const week = Number(target.progress && target.progress.week || 0);
+  const alreadyDecided = flags.first_loan === true || Number(target.economy.debt || 0) > 0;
+  const progressedPastIntro = week >= 2 || /^w[2-5]/.test(scene) || /^ed_/.test(scene) || /^e_/.test(scene);
+  const tinyEconomy = Number(target.economy.cash || 0) < 10000000
+    && Number(target.economy.assets || 0) < 10000000;
+
+  if (progressedPastIntro && !alreadyDecided && tinyEconomy) {
+    target.economy.cash = Number(target.economy.cash || 0) + 30000000;
+    target.economy.debt = Number(target.economy.debt || 0) + 42000000;
+    target.flags = {
+      ...flags,
+      first_loan: true,
+      seed_money: 'loan_migrated',
+      loan_resisted: false,
+      pressure: true,
+    };
+  }
 }
 
 function currentScene() {
@@ -153,33 +188,8 @@ function setScene(id) {
 
 function remapSceneId(id, target = state) {
   const flags = (target && target.flags) || {};
-  const checked = flags.appearance === 'checked';
-  const metYumina = !!flags.met_yumina;
-
-  // 외형(거울에서 다듬었는가) → 거리/정류장 분기
-  if (id === 'w1_walk_to_stop') return checked ? 'w1_walk_to_stop_checked' : 'w1_walk_to_stop_plain';
-  if (id === 'w1_busstop') return checked ? 'w1_busstop_checked' : 'w1_busstop_plain';
-  if (id === 'w1_hunt_fail') return 'w1_hunt_fail_plain';
-
-  // 유민아를 만났는가 → 2·3주차, 4주차 후반 분기
-  if (id === 'w2_contact') return metYumina ? 'w2_yumina_text' : 'w2_alone';
-  if (id === 'w3_open') return metYumina ? 'w3_date_meet' : 'w3_market_arrival';
-  if (id === 'w4a_after') return metYumina ? 'w4a_borrow_hesitate' : 'w4a_alone';
-  if (id === 'w4b_after') return metYumina ? 'w4b_yumina' : 'w4b_alone';
-  if (id === 'w5b_choice') return metYumina ? 'w5b_choice_y' : 'w5b_choice_n';
-
-  // 3주차 첫날: 어떤 종목을 샀는지로 결과 화면 분기 (손실 종목은 내러티브로 — 앱 상승화면 회피)
-  if (id === 'w3_stock_result') {
-    if (flags.stock_pick === 'battery') return 'w3_result_battery'; // 조용한 정답(대박)
-    if (flags.stock_pick === 'bio') return 'w3_result_bio';         // 무난(소폭)
-    if (flags.stock_pick === 'samsung') return 'w3_result_loss';    // 종토방 함정(손실)
-    return 'w3_result_skip';                                        // 미매수
-  }
-
-  // 4주차 결과: 수익이 났으면 생존, 손실/미매수면 붕괴.
-  if (id === 'w4_result') return (Number(flags.stock_profit) > 0 || flags.temperance) ? 'w4b' : 'w4a';
-
-  return id;
+  // 분기 조건은 data/branches.js 한 곳에만 둔다(흐름도·검증기와 공유). 여기선 적용만.
+  return remapBranch(id, flags);
 }
 
 function playerName() {
@@ -190,12 +200,8 @@ function setPlayerName(name) {
   state.player.name = name || '';
 }
 
-function clampAnger(value) {
-  return Math.max(0, Math.min(MAX_ANGER, Number(value || 0)));
-}
-
-function clampHumanity(value) {
-  return Math.max(0, Math.min(MAX_HUMANITY, Number(value == null ? MAX_HUMANITY : value)));
+function clampHappy(value) {
+  return Math.max(0, Math.min(MAX_HAPPY, Number(value || 0)));
 }
 
 function netWorth(target = state) {
@@ -219,6 +225,33 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString('ko-KR');
 }
 
+function formatUnitMoney(value) {
+  const abs = Math.abs(Math.round(Number(value || 0)));
+  if (abs >= 100000000) {
+    const unit = abs / 100000000;
+    return `${Number.isInteger(unit) ? unit.toLocaleString('ko-KR') : Number(unit.toFixed(1)).toLocaleString('ko-KR')}억`;
+  }
+  if (abs >= 10000) {
+    const unit = abs / 10000;
+    return `${Number.isInteger(unit) ? unit.toLocaleString('ko-KR') : Math.round(unit).toLocaleString('ko-KR')}만원`;
+  }
+  return '';
+}
+
+function formatWonEok(value) {
+  const num = Number(value || 0);
+  const abs = Math.abs(Math.round(num));
+  const sign = num < 0 ? '-' : '';
+  const unit = formatUnitMoney(abs);
+  return `${sign}${formatMoney(abs)}원${unit ? ` (${unit})` : ''}`;
+}
+
+function formatSignedMoney(value) {
+  const num = Number(value || 0);
+  const sign = num >= 0 ? '+' : '-';
+  return `${sign}${formatWonEok(Math.abs(num))}`;
+}
+
 function formatCompactMoney(value) {
   const num = Number(value || 0);
   const abs = Math.abs(num);
@@ -227,19 +260,40 @@ function formatCompactMoney(value) {
   return `${formatMoney(num)}원`;
 }
 
-function angerGaugeHTML() {
-  const anger = clampAnger(state.meters && state.meters.anger);
-  const full = anger >= MAX_ANGER ? ' full' : '';
-  const cells = Array.from({ length: MAX_ANGER }, (_, i) =>
-    `<i class="${i < anger ? 'on' : ''}"></i>`).join('');
-  return `<span class="anger-meter${full}" aria-label="분노 ${anger}/${MAX_ANGER}">
-    <span class="anger-label">분노</span><span class="anger-cells">${cells}</span>
-  </span>`;
+function queueMoneyCue(delta, label) {
+  const amount = Number(delta || 0);
+  if (!Number.isFinite(amount) || amount === 0) return;
+  pendingMoneyCues.push({
+    amount,
+    label: label || (amount > 0 ? '입금' : '출금'),
+  });
+  if (pendingMoneyCues.length > MAX_MONEY_CUES) {
+    pendingMoneyCues = pendingMoneyCues.slice(-MAX_MONEY_CUES);
+  }
 }
 
-function humanityStatHTML() {
-  const humanity = clampHumanity(state.meters && state.meters.humanity);
-  return `<span class="humanity-stat" aria-label="인간성 ${humanity}/${MAX_HUMANITY}">인간성 ${humanity}</span>`;
+function moneyCueHTML() {
+  if (!pendingMoneyCues.length) return '';
+  const cues = pendingMoneyCues.splice(0);
+  return `<div class="money-cues" aria-live="polite">`
+    + cues.map(cue => {
+      const tone = cue.amount > 0 ? 'plus' : 'minus';
+      return `<div class="money-cue ${tone}">
+        <span class="money-cue-label">${escapeHTML(cue.label)}</span>
+        <span class="money-cue-amount">${escapeHTML(formatSignedMoney(cue.amount))}</span>
+      </div>`;
+    }).join('')
+    + `</div>`;
+}
+
+function happyGaugeHTML() {
+  const happy = clampHappy(state.meters && state.meters.happy);
+  const low = happy <= 1 ? ' low' : '';
+  const cells = Array.from({ length: MAX_HAPPY }, (_, i) =>
+    `<i class="${i < happy ? 'on' : ''}"></i>`).join('');
+  return `<span class="happy-meter${low}" aria-label="행복 ${happy}/${MAX_HAPPY}">
+    <span class="happy-label">행복</span><span class="happy-cells">${cells}</span>
+  </span>`;
 }
 
 function escapeHTML(value) {
@@ -254,12 +308,25 @@ function escapeHTML(value) {
 
 /* ---------- 저장/불러오기 ---------- */
 function save() {
-  if (PREVIEW_MODE) return;
+  if (PREVIEW_MODE) return true;
   try {
     updateRecords();
     captureBranchSave();
+    pruneBranchSaves();
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  } catch (e) {}
+    lastSaveError = '';
+    return true;
+  } catch (e) {
+    try {
+      pruneBranchSaves(Math.max(20, Math.floor(MAX_BRANCH_SAVES / 2)));
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      lastSaveError = '';
+      return true;
+    } catch (retryError) {
+      lastSaveError = retryError && retryError.message ? retryError.message : 'save failed';
+      return false;
+    }
+  }
 }
 function clearSave() {
   if (PREVIEW_MODE) return;
@@ -337,6 +404,25 @@ function captureBranchSave(sceneId = currentScene()) {
   };
 }
 
+function pruneBranchSaves(limit = MAX_BRANCH_SAVES) {
+  const saves = state.branchSaves || {};
+  const entries = Object.entries(saves);
+  if (entries.length <= limit) return;
+
+  const current = currentScene();
+  const keep = new Set([current]);
+  entries
+    .sort((a, b) => Number(a[1].at || 0) - Number(b[1].at || 0))
+    .slice(-limit)
+    .forEach(([scene]) => keep.add(scene));
+
+  const next = {};
+  entries.forEach(([scene, item]) => {
+    if (keep.has(scene)) next[scene] = item;
+  });
+  state.branchSaves = next;
+}
+
 /* ---------- 텍스트 치환: {이름} -> 플레이어 이름 ---------- */
 function fill(text) {
   if (!text) return '';
@@ -377,14 +463,17 @@ function imageBlock(img) {
   }
   if (isLayeredImage(img)) {
     const character = img.character || null;
+    const banner = img.banner || null;
     const classes = ['scene-img', 'has-art', 'layered-art'];
     if (character && img.revealCharacter !== false) classes.push('reveal-character');
     if (character && img.revealCharacter === false) classes.push('character-shown');
+    if (banner) classes.push('has-news-banner');
 
     const style = [
       `--scene-art:url('${escapeHTML(img.background)}')`,
       cssVar('scene-bg-position', img.backgroundPosition),
       cssVar('scene-bg-scale', img.backgroundScale),
+      cssVar('scene-bg-fit', img.backgroundFit || img.fit),
       cssVar('character-left', img.characterLeft),
       cssVar('character-bottom', img.characterBottom),
       cssVar('character-width', img.characterWidth),
@@ -395,10 +484,19 @@ function imageBlock(img) {
     const characterHTML = character
       ? `<img class="scene-character" src="${escapeHTML(character)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + character)}">`
       : '';
+    const bannerHTML = banner
+      ? `<div class="scene-news-banner" aria-label="${escapeHTML(banner.kicker || '경제 뉴스')}">
+          <div class="scene-news-kicker">${escapeHTML(banner.kicker || '경제 속보')}</div>
+          <div class="scene-news-headline">${escapeHTML(banner.headline || '')}</div>
+          ${banner.sub ? `<div class="scene-news-sub">${escapeHTML(banner.sub)}</div>` : ''}
+          ${banner.ticker ? `<div class="scene-news-ticker">${escapeHTML(banner.ticker)}</div>` : ''}
+        </div>`
+      : '';
 
     return `<div class="${classes.join(' ')} is-loading" style="${style}" data-character-delay="${escapeHTML(delay)}">
       <img class="scene-bg" src="${escapeHTML(img.background)}" alt="" data-missing="${escapeHTML('이미지 없음: ' + img.background)}">
       ${characterHTML}
+      ${bannerHTML}
       <div class="scene-loader" aria-hidden="true"></div>
     </div>`;
   }
@@ -484,7 +582,7 @@ function render() {
   if (window.PhoneWidget) PhoneWidget.bind(els.stage, sc, state);
 
   const mapBtn = els.hdr.querySelector('[data-act="map"]');
-  if (mapBtn) mapBtn.onclick = () => { save(); openMapOverlay(); };
+  if (mapBtn) mapBtn.onclick = () => { openMapOverlay(save()); };
 }
 
 function renderHeader(sc) {
@@ -500,12 +598,12 @@ function renderHeader(sc) {
     return;
   }
 
+  const moneyClass = pendingMoneyCues.length ? ' money-bump' : '';
   els.hdr.innerHTML = `
     <span class="hdr-title">${escapeHTML(title)}</span>
     <span class="hdr-stats">
-      <span class="money-stat">돈 ${formatCompactMoney(state.economy.cash)}</span>
-      ${humanityStatHTML()}
-      ${angerGaugeHTML()}
+      <span class="money-stat${moneyClass}">돈 ${formatCompactMoney(state.economy.cash)}</span>
+      ${happyGaugeHTML()}
       <button class="map-btn" data-act="map">${PREVIEW_MODE ? '지도' : '세이브'}</button>
     </span>`;
 }
@@ -605,7 +703,7 @@ function renderScene(sc) {
   if (choices.length) {
     bottom = `<div class="tap-hint tap-hint-hidden choice-next-hint">(터치로 선택)</div>`
       + `<div class="choices choices-hidden">` + choices.map(({ ch, i }) =>
-      `<button class="choice-btn${isRageChoice(ch) ? ' rage-choice' : ''}" data-source="${ch.source}" data-i="${i}">${fill(ch.label)}</button>`).join('') + `</div>`;
+      `<button class="choice-btn${isDesperateChoice(ch) ? ' desperate-choice' : ''}" data-source="${ch.source}" data-i="${i}">${fill(ch.label)}</button>`).join('') + `</div>`;
   } else if (sc.next) {
     bottom = `<div class="tap-hint tap-hint-hidden">(터치로 진행)</div>`;
   } else {
@@ -616,9 +714,11 @@ function renderScene(sc) {
   const textDelay = stagedImageTextDelay(sc.image);
   const textClass = textDelay ? 'scene-text scene-text-delayed' : 'scene-text';
   const textStyle = textDelay ? ` style="--text-delay:${textDelay}ms"` : '';
+  const moneyCues = hasTextBox ? moneyCueHTML() : '';
   const textBox = hasTextBox ? `
     <div class="${textClass}"${textStyle}>
       ${sc.speaker ? `<div class="speaker">${fill(sc.speaker)}${relSpan}</div>` : ''}
+      ${moneyCues}
       <div class="dialogue">${fill(sc.text || '')}</div>
       ${bottom}
     </div>` : '';
@@ -758,29 +858,37 @@ function isChoiceVisible(ch) {
   const req = ch.requires || ch.when;
   if (!req) return true;
 
-  const anger = clampAnger(state.meters && state.meters.anger);
-  const angerMin = req.angerAtLeast ?? req.angerGte ?? req.minAnger;
-  if (typeof angerMin === 'number' && anger < angerMin) return false;
+  const happy = clampHappy(state.meters && state.meters.happy);
+  const happyMax = req.happyAtMost ?? req.happyLte ?? req.maxHappy;
+  if (typeof happyMax === 'number' && happy > happyMax) return false;
 
   const flagReq = req.flags || {};
   for (const key in flagReq) {
     if (state.flags[key] !== flagReq[key]) return false;
   }
 
+  const missingFlags = req.missingFlags || req.flagsMissing || [];
+  const missingList = Array.isArray(missingFlags) ? missingFlags : Object.keys(missingFlags);
+  for (const key of missingList) {
+    if (Object.prototype.hasOwnProperty.call(state.flags, key)) return false;
+  }
+
   return true;
 }
 
-function isRageChoice(ch) {
+function isDesperateChoice(ch) {
   const req = ch.requires || ch.when || {};
-  return !!(ch.rage || ch.extreme || typeof req.angerAtLeast === 'number' || typeof req.angerGte === 'number');
+  return !!(ch.desperate || ch.rage || ch.extreme || typeof req.happyAtMost === 'number' || typeof req.happyLte === 'number');
 }
 
 /* --- 엔딩 카드 --- */
 function renderEnd(sc) {
+  const happy = clampHappy(state.meters && state.meters.happy);
   els.stage.innerHTML = `
     <div class="card-screen" id="endScreen">
       <div class="card-big">${fill(sc.big || 'THE END')}</div>
       ${sc.sub ? `<div class="card-sub">${fill(sc.sub)}</div>` : ''}
+      <div class="card-stat">최종 행복 ${happy}/${MAX_HAPPY}</div>
       <div class="card-tap">(터치하면 타이틀로)</div>
     </div>`;
   document.getElementById('endScreen').onclick = () => {
@@ -939,10 +1047,11 @@ function renderMap(sc) {
 }
 
 // 세이브 버튼에서 여는 오버레이 (현재 씬은 그대로, 돌아가기로 복귀)
-function openMapOverlay() {
-  els.hdr.textContent = '진행 분기 · 저장됨';
+function openMapOverlay(saveOk = true) {
+  els.hdr.textContent = saveOk ? '진행 분기 · 저장됨' : '진행 분기 · 저장 실패';
+  const saveWarning = saveOk ? '' : `<div class="map-save-warning">저장 공간을 정리한 뒤 다시 세이브해 주세요.${lastSaveError ? ` ${escapeHTML(lastSaveError)}` : ''}</div>`;
   els.stage.innerHTML = `<div class="map-screen">${buildMapHTML(true)}`
-    + `<button class="back-btn" id="mapBack">← 돌아가기</button></div>`;
+    + `${saveWarning}<button class="back-btn" id="mapBack">← 돌아가기</button></div>`;
   bindMapCheckpointButtons();
   document.getElementById('mapBack').onclick = () => render();
 }
@@ -987,7 +1096,7 @@ function recordHistory(entry) {
     ...entry,
     turn: state.progress.turn,
     cash: state.economy.cash,
-    anger: clampAnger(state.meters && state.meters.anger),
+    happy: clampHappy(state.meters && state.meters.happy),
     netWorth: netWorth(),
     at: Date.now(),
   });
@@ -1009,28 +1118,30 @@ function applyEffects(node) {
   if (effects.stockSkip) applyStockSkip(effects.stockSkip);
   if (effects.stockBuyAll) applyStockBuyAll(effects.stockBuyAll);
   if (effects.stockResult) applyStockResult(effects.stockResult);
+  if (effects.cashAllInWin) applyCashAllInWin(effects.cashAllInWin);
+  if (effects.cashAllInLoss) applyCashAllInLoss(effects.cashAllInLoss);
 
   applyEconomyDelta('cash', effects.cash);
   applyEconomyDelta('debt', effects.debt);
   applyEconomyDelta('assets', effects.assets);
-  applyAngerDelta(effects.anger);
-  applyAngerDelta(effects.rage);
-  applyHumanityDelta(effects.humanity);
+  applyHappyDelta(effects.happy);
   if (effects.economy) {
     applyEconomyDelta('cash', effects.economy.cash);
     applyEconomyDelta('debt', effects.economy.debt);
     applyEconomyDelta('assets', effects.economy.assets);
   }
   if (effects.meters) {
-    applyAngerDelta(effects.meters.anger);
-    applyHumanityDelta(effects.meters.humanity);
+    applyHappyDelta(effects.meters.happy);
   }
 
-  if (typeof effects.setCash === 'number') state.economy.cash = effects.setCash;
+  if (typeof effects.setCash === 'number') {
+    const beforeCash = Number(state.economy.cash || 0);
+    state.economy.cash = effects.setCash;
+    queueMoneyCue(effects.setCash - beforeCash);
+  }
   if (typeof effects.setDebt === 'number') state.economy.debt = effects.setDebt;
   if (typeof effects.setAssets === 'number') state.economy.assets = effects.setAssets;
-  if (typeof effects.setAnger === 'number') state.meters.anger = clampAnger(effects.setAnger);
-  if (typeof effects.setHumanity === 'number') state.meters.humanity = clampHumanity(effects.setHumanity);
+  if (typeof effects.setHappy === 'number') state.meters.happy = clampHappy(effects.setHappy);
   if (typeof effects.startingCash === 'number') state.economy.startingCash = effects.startingCash;
 
   if (typeof node.week === 'number') state.progress.week = node.week;
@@ -1126,8 +1237,42 @@ function applyStockResult() {
   const resultValue = Number(flags.stock_result_value || 0);
   if (resultValue <= 0) return;
 
-  applyEconomyDelta('assets', resultValue - invested);
-  applyFlags({ stock_result_applied: true });
+  const currentAssets = Number(state.economy.assets || 0);
+  const realizedProfit = Number(flags.stock_profit || (resultValue - invested));
+
+  state.economy.assets = Math.max(0, currentAssets - invested);
+  state.economy.cash = Number(state.economy.cash || 0) + resultValue;
+  queueMoneyCue(realizedProfit, realizedProfit >= 0 ? '수익 확정' : '손실 확정');
+  applyFlags({
+    stock_result_applied: true,
+    stock_cash_result: resultValue,
+    stock_profit_realized: realizedProfit,
+  });
+}
+
+function applyCashAllInWin(cfg = {}) {
+  const cash = Math.max(0, Number(state.economy.cash || 0));
+  if (cash <= 0) return;
+  const multiplier = Math.max(0, Number(cfg.multiplier ?? 1));
+  const gain = Math.round(cash * multiplier);
+  if (gain <= 0) return;
+  applyEconomyDelta('cash', gain, { label: cfg.label || '몰빵 적중' });
+  applyFlags({
+    all_in_last_stake: cash,
+    all_in_last_gain: gain,
+    all_in_last_result: 'win',
+  });
+}
+
+function applyCashAllInLoss(cfg = {}) {
+  const cash = Math.max(0, Number(state.economy.cash || 0));
+  if (cash <= 0) return;
+  applyEconomyDelta('cash', -cash, { label: cfg.label || '몰빵 손실' });
+  applyFlags({
+    all_in_last_stake: cash,
+    all_in_last_loss: cash,
+    all_in_last_result: 'loss',
+  });
 }
 
 function applyAffection(delta) {
@@ -1142,21 +1287,16 @@ function applyFlags(flags) {
   }
 }
 
-function applyEconomyDelta(key, delta) {
+function applyEconomyDelta(key, delta, options = {}) {
   if (typeof delta !== 'number') return;
   state.economy[key] = Number(state.economy[key] || 0) + delta;
+  if (key === 'cash' && !options.silent) queueMoneyCue(delta, options.label);
 }
 
-function applyAngerDelta(delta) {
+function applyHappyDelta(delta) {
   if (typeof delta !== 'number') return;
-  state.meters = state.meters || { anger: 0 };
-  state.meters.anger = clampAnger(Number(state.meters.anger || 0) + delta);
-}
-
-function applyHumanityDelta(delta) {
-  if (typeof delta !== 'number') return;
-  state.meters = state.meters || { anger: 0, humanity: MAX_HUMANITY };
-  state.meters.humanity = clampHumanity(clampHumanity(state.meters.humanity) + delta);
+  state.meters = state.meters || { happy: START_HAPPY };
+  state.meters.happy = clampHappy(Number(state.meters.happy || 0) + delta);
 }
 
 function unlock(ids) {

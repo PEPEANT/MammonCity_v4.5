@@ -101,16 +101,21 @@ body.preview-mode #app {
   font-weight: 800;
 }
 
-.money-stat,
-.humanity-stat {
+.money-stat {
   white-space: nowrap;
 }
 
-.humanity-stat {
-  color: var(--green);
+.money-stat.money-bump {
+  animation: moneyBump 0.55s ease;
 }
 
-.anger-meter {
+@keyframes moneyBump {
+  0% { transform: translateY(0); }
+  36% { transform: translateY(-2px) scale(1.06); color: #ffe08a; }
+  100% { transform: translateY(0); }
+}
+
+.happy-meter {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -118,29 +123,40 @@ body.preview-mode #app {
   color: #d9d1c2;
 }
 
-.anger-label {
-  color: #eaa29a;
+.happy-label {
+  color: #9fd6a6;
 }
 
-.anger-cells {
+.happy-cells {
   display: inline-flex;
   gap: 2px;
 }
 
-.anger-cells i {
+.happy-cells i {
   width: 8px;
   height: 10px;
-  border: 1px solid rgba(224, 72, 60, 0.45);
+  border: 1px solid rgba(108, 196, 122, 0.45);
+  background: rgba(108, 196, 122, 0.08);
+}
+
+.happy-cells i.on {
+  background: #6cc47a;
+  box-shadow: 0 0 8px rgba(108, 196, 122, 0.45);
+}
+
+/* 행복이 낮으면(위험) 빨강으로 */
+.happy-meter.low .happy-label {
+  color: #eaa29a;
+}
+
+.happy-meter.low .happy-cells i {
+  border-color: rgba(224, 72, 60, 0.45);
   background: rgba(224, 72, 60, 0.08);
 }
 
-.anger-cells i.on {
+.happy-meter.low .happy-cells i.on {
   background: var(--red);
   box-shadow: 0 0 8px rgba(224, 72, 60, 0.45);
-}
-
-.anger-meter.full .anger-label {
-  color: #ffdfd9;
 }
 
 #stage {
@@ -228,7 +244,7 @@ body.preview-mode #app {
   z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: var(--scene-bg-fit, cover);
   object-position: var(--scene-bg-position, center);
   transform: scale(var(--scene-bg-scale, 1));
 }
@@ -259,6 +275,90 @@ body.preview-mode #app {
 .scene-img.layered-art.reveal-character.character-shown .scene-character {
   opacity: 1;
   transform: translateX(-50%) translateY(var(--character-shift-y, 0));
+}
+
+.scene-news-banner {
+  position: absolute;
+  z-index: 6;
+  left: clamp(12px, 3vw, 34px);
+  right: clamp(12px, 3vw, 34px);
+  bottom: clamp(14px, 3vw, 30px);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: stretch;
+  overflow: hidden;
+  color: #111827;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(242, 247, 255, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.38);
+  text-align: left;
+}
+
+.scene-news-kicker {
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  color: #fff;
+  background: #c9182b;
+  font-size: clamp(0.72rem, 1.8vw, 0.9rem);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.scene-news-headline {
+  min-width: 0;
+  padding: 10px 14px 2px;
+  font-size: clamp(1.03rem, 3.6vw, 1.55rem);
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+.scene-news-sub {
+  min-width: 0;
+  padding: 0 14px 10px;
+  color: #334155;
+  font-size: clamp(0.72rem, 2.1vw, 0.94rem);
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.scene-news-ticker {
+  grid-column: 1 / -1;
+  padding: 7px 14px;
+  color: #ffd15c;
+  background: #101827;
+  border-top: 3px solid #2563eb;
+  font-size: clamp(0.68rem, 1.8vw, 0.82rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .scene-news-banner {
+    grid-template-columns: 1fr;
+    left: 10px;
+    right: 10px;
+    bottom: 12px;
+  }
+
+  .scene-news-kicker {
+    grid-row: auto;
+    justify-content: center;
+    padding: 7px 10px;
+  }
+
+  .scene-news-headline {
+    padding: 9px 10px 2px;
+  }
+
+  .scene-news-sub {
+    padding: 0 10px 9px;
+  }
+
+  .scene-news-ticker {
+    padding: 6px 10px;
+  }
 }
 
 /* ===== 이미지 로딩 표시 + 도착 시 페이드인 ===== */
@@ -399,6 +499,60 @@ body.preview-mode #app {
   font-weight: 700;
 }
 
+.money-cues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -2px;
+}
+
+.money-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 7px 10px;
+  border: 1px solid rgba(216, 180, 93, 0.45);
+  background: rgba(255, 209, 92, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+  font-weight: 900;
+  line-height: 1.1;
+  animation: moneyCueIn 0.46s cubic-bezier(0.2, 0.9, 0.22, 1.18);
+}
+
+.money-cue.plus {
+  color: #ffe08a;
+  border-color: rgba(255, 209, 92, 0.62);
+}
+
+.money-cue.minus {
+  color: #ff8c79;
+  border-color: rgba(255, 96, 77, 0.58);
+  background: rgba(255, 83, 72, 0.12);
+}
+
+.money-cue-label {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+}
+
+.money-cue-amount {
+  white-space: nowrap;
+  font-size: 16px;
+}
+
+@keyframes moneyCueIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .dialogue {
   color: var(--ink);
   white-space: pre-line;
@@ -464,7 +618,7 @@ body.preview-mode #app {
   transform: translateY(1px);
 }
 
-.choice-btn.rage-choice {
+.choice-btn.desperate-choice {
   border-color: rgba(224, 72, 60, 0.68);
   border-left-color: var(--red);
   background:
@@ -763,6 +917,17 @@ body.preview-mode #app {
   word-break: keep-all;
 }
 
+.card-stat {
+  margin-top: 18px;
+  padding: 5px 14px;
+  border: 1px solid rgba(108, 196, 122, 0.4);
+  border-radius: 999px;
+  color: #9fd6a6;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .card-tap {
   margin-top: 22px;
   color: rgba(245, 239, 226, 0.48);
@@ -940,6 +1105,17 @@ body.preview-mode #app {
   align-items: center;
   gap: 14px;
   padding: 6px 0 18px;
+}
+
+.map-save-warning {
+  width: min(520px, 92vw);
+  padding: 12px 14px;
+  color: #ffd2cc;
+  background: rgba(148, 27, 27, 0.28);
+  border: 1px solid rgba(255, 99, 99, 0.45);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
 }
 
 .map-row {
