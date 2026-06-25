@@ -29,6 +29,7 @@ const ENDING_SCENE_CHAINS = {
   e_dirt: ['ed_dirt_room', 'ed_dirt_phone', 'e_dirt'],
   e_han: ['ed_han_still', 'ed_han_phone', 'e_han'],
   e_ruin: ['ed_ruin_phone', 'e_ruin'],
+  e_survival: ['ed_survival_gukbap', 'ed_survival_phone', 'e_survival'],
   e_silver: ['ed_silver_gukbap', 'ed_silver_phone', 'e_silver'],
   e_gold: ['ed_gold_rich', 'ed_gold_phone', 'e_gold'],
 };
@@ -189,7 +190,7 @@ function setScene(id) {
 function remapSceneId(id, target = state) {
   const flags = (target && target.flags) || {};
   // 분기 조건은 data/branches.js 한 곳에만 둔다(흐름도·검증기와 공유). 여기선 적용만.
-  return remapBranch(id, flags);
+  return remapBranch(id, flags, target);
 }
 
 function playerName() {

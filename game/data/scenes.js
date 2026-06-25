@@ -48,6 +48,7 @@ window.STORY = {
       [ { label: '흙수저',     week: 5, branch: 'A', ending: 'e_dirt' },
         { label: '한강',       week: 5, branch: 'A', ending: 'e_han' },
         { label: '파멸',       week: 5, branch: 'A', ending: 'e_ruin' },
+        { label: '생존',       week: 5, branch: 'B', ending: 'e_survival' },
         { label: '은수저',     week: 5, branch: 'B', ending: 'e_silver' },
         { label: '금수저',     week: 5, branch: 'B', ending: 'e_gold' } ],
     ],
@@ -2275,10 +2276,10 @@ window.STORY = {
       speaker: '{이름}(25)', relationOf: 'yumina',
       text: '여기서 멈출 수도, 더 키울 수도 있었다.\n\n폰엔 유민아의 메시지가 떠 있었다. "이번 주말 국밥 ㄱ?"\n그 한 줄과, 화면 속 불어나는 숫자가 같은 손바닥 위에 있었다.',
       choices: [
-        { label: '앱을 끄고, 약속 장소로 간다', next: 'ed_silver_gukbap' },
+        { label: '앱을 끄고, 약속 장소로 간다', next: 'w5_ending_resolve', effects: { flags: { ending_action: 'promise', chose_people: true, gold_yumina_call_ready: true } } },
         {
           label: '코인 수익을 전부 걸어 100억대로 넘기고, 프라이빗 대시보드를 연다',
-          next: 'w5_gold_unlock_y',
+          next: 'w5_ending_resolve',
           requires: { flags: { coin_success: true } },
           effects: { setCash: 11000000000, flags: { chose_money: true, gold_cashout: true, wealth_app_unlocked: true, luxury_date: false } },
         },
@@ -2460,14 +2461,49 @@ window.STORY = {
       speaker: '{이름}(25)',
       text: '여기서 멈출 수도, 더 키울 수도 있었다.\n\n멈춰서 가질 평범한 하루를 떠올려 봤지만,\n그 하루를 같이 보낼 사람이 없다는 걸 깨닫자, 멈출 이유도 옅어졌다.',
       choices: [
-        { label: '여기서 멈추고 만족한다', next: 'e_silver' },
+        { label: '여기서 멈추고 만족한다', next: 'w5_ending_resolve', effects: { flags: { ending_action: 'settle' } } },
         {
           label: '코인 수익을 전부 걸어 100억대로 넘기고, 프라이빗 대시보드를 연다',
-          next: 'w5_gold_unlock_n',
+          next: 'w5_ending_resolve',
           requires: { flags: { coin_success: true } },
           effects: { setCash: 11000000000, flags: { chose_money: true, gold_cashout: true, wealth_app_unlocked: true, luxury_date: false } },
         },
       ],
+    },
+
+    /* 생존 시퀀스 */
+    ed_survival_gukbap: {
+      header: '엔딩 · 생존',
+      image: {
+        background: 'assets/week2/social/cafe-interior.png',
+        character: 'assets/characters/yumina/full-smile.png',
+        characterWidth: '44%', characterLeft: '58%', characterBottom: '-8%',
+      },
+      speaker: '유민아', relationOf: 'yumina',
+      text: '앱을 껐다. 손은 허전했지만, 더 잃을 것도 없었다.\n\n허름한 국밥집, 마주 앉은 유민아가 김 너머로 웃었다.\n"거봐. 이런 게 좋다니까."\n\n계급은 바뀌지 않았다. 그래도 그날은, 내가 무너지지 않은 하루였다.',
+      next: 'ed_survival_phone',
+    },
+    ed_survival_phone: {
+      header: '엔딩 · 생존',
+      image: 'assets/week1/street/studio-front.png',
+      phone: {
+        screen: 'messages',
+        statusbar: { time: '21:40', battery: 64 },
+        contact: '유민아', revealText: 'afterFlow', holdMs: 1300,
+        messages: [
+          { from: 'them', name: '유민아', text: '오늘 맛있었다 ㅎㅎ' },
+          { from: 'them', name: '유민아', text: '다음 주에 또 봐요.' },
+          { from: 'me', text: '응. 다음 주에 또 보자.' },
+        ],
+      },
+      speaker: '{이름}(25)', relationOf: 'yumina',
+      text: '종목 알림은 더 이상 울리지 않았다.\n대신 "다음 주에 또 봐요"가 떠 있었다.\n\n10억도, 100억도 아니었다.\n하지만 처음으로, 다음 주를 기다릴 이유가 생겼다.',
+      next: 'e_survival',
+    },
+    e_survival: {
+      type: 'end', header: '엔딩',
+      big: '생존',
+      sub: '계급은 바뀌지 않았지만,\n적어도 더는 오늘의 나를 태우지 않았다.',
     },
 
     /* 은수저 시퀀스 */
