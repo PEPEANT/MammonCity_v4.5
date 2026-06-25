@@ -26,7 +26,7 @@ const SCENES_FILE = path.join(GAME_DIR, 'data', 'scenes.js');
 // phone.js 가 실제로 그릴 수 있는 화면. 새 화면 추가하면 여기도 같이 갱신.
 const SUPPORTED_PHONE_SCREENS = [
   'ringing', 'missed', 'recents', 'messages',
-  'chatRooms', 'apps', 'wealthHub', 'assetStore', 'bankApp', 'snsFeed', 'youtube',
+  'chatRooms', 'apps', 'wealthHub', 'assetStore', 'bankApp', 'snsFeed', 'newsApp', 'disaInside', 'youtube', 'cryptoExchange',
   'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult',
   'oddEvenGame', 'ladder', 'casino', 'blackjackGame', 'blackjack',
 ];
@@ -46,7 +46,7 @@ const EFFECT_KEYS = [
   'happy', 'meters',
   'setCash', 'setDebt', 'setAssets', 'setHappy', 'startingCash',
   'stockBuyAll', 'stockSkip', 'stockResult',
-  'cashAllInWin', 'cashAllInLoss',
+  'cashAllInWin', 'cashAllInLoss', 'cashLossPct',
 ];
 
 // 종료형(다음 씬이 없어도 정상인) 타입

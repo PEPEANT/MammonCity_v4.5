@@ -480,18 +480,69 @@ window.STORY = {
         screen: 'apps',
         statusbar: { time: '1:05', battery: 36 },
         homeTitle: '잠이 안 오는 밤',
-        homeSubtitle: '손가락이 두 앱 사이에서 멈췄다',
+        homeSubtitle: '손가락이 세 아이콘 사이에서 멈췄다',
         apps: [
           { title: '홀짝', meta: '500만원 판 · 즉시 정산', icon: '홀', tone: 'gamble' },
-          { title: '배금증권', meta: '급등 알림 · 종목토론방', icon: '▲', tone: 'stock' },
+          { title: '배금증권', meta: '급등 알림 · 종목토론방', icon: '증', tone: 'stock', badge: '1' },
+          { title: '디사인사이드', meta: '배금갤 · 개념글', icon: '디', tone: 'disa', badge: '9+' },
         ],
         choices: [
           { label: '도박앱을 연다', next: 'w2_first_gamble_intro', effects: { flags: { first_app: 'gamble' } } },
           { label: '주식앱을 연다', next: 'w2_market_open', effects: { flags: { first_app: 'stock' } } },
+          { label: '디사인사이드 배금갤을 본다', next: 'w2_disa_feed', effects: { flags: { first_app_peek: 'disa' } } },
         ],
       },
       speaker: '{이름}(25)',
-      text: '폰 화면이 켜졌다.\n증권 앱 옆에, 방금 설치한 듯한 도박앱 아이콘이 떠 있었다.\n\n돈을 불리는 방법이 둘로 보였다.',
+      text: '폰 화면이 켜졌다.\n증권 앱 옆에, 방금 설치한 듯한 도박앱과 커뮤니티 앱 아이콘이 떠 있었다.\n\n돈을 불리는 앱 둘과, 그걸 떠드는 앱 하나가 보였다.',
+    },
+    w2_phone_apps_after_disa: {
+      header: '2주차 · 휴대폰',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'apps',
+        statusbar: { time: '1:07', battery: 35 },
+        homeTitle: '잠이 안 오는 밤',
+        homeSubtitle: '이제 돈을 움직일 앱을 골라야 했다',
+        apps: [
+          { title: '홀짝', meta: '500만원 판 · 즉시 정산', icon: '홀', tone: 'gamble' },
+          { title: '배금증권', meta: '급등 알림 · 종목토론방', icon: '증', tone: 'stock', badge: '1' },
+          { title: '디사인사이드', meta: '방금 봄', icon: '디', tone: 'disa', disabled: true },
+        ],
+        choices: [
+          { label: '도박앱을 연다', next: 'w2_first_gamble_intro', effects: { flags: { first_app: 'gamble' } } },
+          { label: '주식앱을 연다', next: 'w2_market_open', effects: { flags: { first_app: 'stock' } } },
+          { label: '디사인사이드는 그만 본다', next: 'w2_phone_apps_after_disa', disabled: true },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '댓글은 빠르게 지나갔지만, 결론은 하나였다.\n벌려면 빨리 눌러야 한다는 것.\n\n손가락이 다시 앱 아이콘 위로 돌아왔다.',
+    },
+    w2_disa_feed: {
+      header: '2주차 · 디사인사이드',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'disaInside',
+        statusbar: { time: '1:06', battery: 35 },
+        disa: {
+          title: '디사인사이드',
+          subtitle: '배금전자 갤러리',
+          search: '배금전자, 홀짝, 대출 검색',
+          badge: '실북갤',
+          tabs: ['전체글', '개념글', '실북갤'],
+          trend: ['배금전자', '홀짝후기', '대출시드', '상한가'],
+          posts: [
+            { no: 2381, title: '배금전자 오늘 못 타면 평생 후회함', user: 'ㅇㅇ', meta: '조회 1,203 · 추천 42', tag: '개념' },
+            { no: 2380, title: '3천으로 시작해서 억 찍은 애 봄?', user: '시드충', meta: '조회 892 · 추천 19' },
+            { no: 2379, title: '홀짝으로 시드 불리고 국장 가는 루트 정리', user: '공략좌', meta: '조회 2,011 · 추천 77', tag: '핫' },
+            { no: 2378, title: '안 사는 애들은 그냥 평생 노동임', user: '노가다탈출', meta: '조회 554 · 추천 8' },
+          ],
+        },
+        choices: [
+          { label: '홈화면으로 돌아간다', next: 'w2_phone_apps_after_disa', effects: { flags: { disa_w2_seen: true } } },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '갤러리는 종토방보다 훨씬 거칠었다.\n근거보다 인증, 설명보다 조롱이 빨랐다.\n\n그런데 이상하게 더 진짜 같았다.',
     },
     w2_first_gamble_intro: {
       header: '2주차 · 홀짝',
@@ -640,22 +691,37 @@ window.STORY = {
     },
     w2_kospi_news_win: {
       header: '2주차 · 경제 뉴스',
-      image: {
-        background: 'assets/news/anchor.png',
-        backgroundPosition: 'center',
-        banner: {
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'newsApp',
+        statusbar: { time: '9:05', battery: 50 },
+        news: {
+          brand: '배금뉴스',
+          updated: '09:05 실시간 업데이트',
           kicker: '경제 속보',
           headline: '코스피 4,000선 돌파',
-          sub: '배금전자 288,000원… 개인 순매수 확대',
-          ticker: 'KOSPI 4,012.86 ▲ 2.7%  |  배금전자 288,000원  |  거래대금 연중 최대',
+          dek: '배금전자가 288,000원까지 급등하며 개인 순매수 상위에 올랐다.',
+          bullets: [
+            '장중 4,012.86 터치, 거래대금 연중 최대',
+            '배금전자 전일 대비 +300% 급등',
+            '개인 투자자 매수세가 지수 상승 주도',
+          ],
+          market: [
+            { name: 'KOSPI', value: '4,012.86 ▲ 2.7%' },
+            { name: '배금전자', value: '288,000 ▲ 300%' },
+          ],
+          related: [
+            { title: '개인 순매수 상위 종목, 배금전자 1위', source: '마켓와치', time: '방금' },
+            { title: '증권가 "단기 과열 구간 진입"', source: '증권부', time: '3분 전' },
+          ],
         },
+        choices: [
+          { label: '수익 알림 밑의 이벤트를 누른다', next: 'w2_stock_win_blackjack_intro' },
+        ],
       },
       effects: { flags: { market_news_seen: true, kospi_news: 'win' } },
-      speaker: '뉴스 앵커',
-      text: '코스피가 장중 4,000선을 돌파했습니다.\n배금전자는 개인 매수세가 몰리며 288,000원에 거래되고 있습니다.\n\n방금 산 종목이 뉴스 화면 가운데에 걸렸다.\n내가 탄 게, 갑자기 시장 전체의 흐름처럼 보였다.',
-      choices: [
-        { label: '수익 알림 밑의 이벤트를 누른다', next: 'w2_stock_win_blackjack_intro' },
-      ],
+      speaker: '{이름}(25)',
+      text: '뉴스앱을 열자 내가 산 종목이 기사 제목에 박혀 있었다.\n방금 전까지는 앱 속 숫자였는데, 이제는 시장 전체가 내 선택을 따라 움직이는 것처럼 보였다.',
     },
     w2_stock_win_blackjack_intro: {
       header: '2주차 · 블랙잭 이벤트',
@@ -710,22 +776,37 @@ window.STORY = {
     },
     w2_kospi_news_skip: {
       header: '2주차 · 경제 뉴스',
-      image: {
-        background: 'assets/news/anchor.png',
-        backgroundPosition: 'center',
-        banner: {
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'newsApp',
+        statusbar: { time: '9:05', battery: 50 },
+        news: {
+          brand: '배금뉴스',
+          updated: '09:05 실시간 업데이트',
           kicker: '경제 속보',
           headline: '코스피 4,000선 돌파',
-          sub: '배금전자 288,000원… 개인 순매수 확대',
-          ticker: 'KOSPI 4,012.86 ▲ 2.7%  |  배금전자 288,000원  |  외국인·개인 동반 매수',
+          dek: '배금전자가 288,000원까지 급등하며 개인 순매수 상위에 올랐다.',
+          bullets: [
+            '장중 4,012.86 터치, 거래대금 연중 최대',
+            '배금전자 전일 대비 +300% 급등',
+            '미매수 투자자 FOMO 검색량 급증',
+          ],
+          market: [
+            { name: 'KOSPI', value: '4,012.86 ▲ 2.7%' },
+            { name: '배금전자', value: '288,000 ▲ 300%' },
+          ],
+          related: [
+            { title: '어제 관심종목 놓친 투자자들, 커뮤니티 후회글 급증', source: '마켓와치', time: '방금' },
+            { title: '증권가 "단기 과열 구간 진입"', source: '증권부', time: '3분 전' },
+          ],
         },
+        choices: [
+          { label: '알림을 닫는다', next: 'w2_after_stock' },
+        ],
       },
       effects: { flags: { market_news_seen: true, kospi_news: 'skip', missed_news_tilt: true } },
-      speaker: '뉴스 앵커',
-      text: '코스피가 장중 4,000선을 돌파했습니다.\n배금전자는 개인 매수세가 몰리며 288,000원에 거래되고 있습니다.\n\n사지 않은 종목 이름이 뉴스 자막으로 지나갔다.\n돈은 그대로였는데, 기회만 내 손에서 빠져나간 것 같았다.',
-      choices: [
-        { label: '알림을 닫는다', next: 'w2_after_stock' },
-      ],
+      speaker: '{이름}(25)',
+      text: '뉴스앱 첫 화면에 사지 않은 종목 이름이 떠 있었다.\n돈은 그대로였는데, 기사 제목 하나가 손실처럼 느껴졌다.',
     },
     /* 코인 입문 전 — 모두가 "끝났다"고 곡소리. 아무도 안 살 때가 바닥처럼 보인다(역발상 미끼). */
     w2_coin_news: {
@@ -823,6 +904,46 @@ window.STORY = {
       ],
     },
     /* 다음 시기 — 완전 반전. 모두가 끝났다던 자리에서 +1,000% 차트. 이 성공이 더 큰 도박으로 끄는 미끼. */
+    w2_coin_exchange: {
+      header: '2주차 · 코인 선물',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'cryptoExchange',
+        statusbar: { time: '2:14', battery: 33 },
+        exch: { name:'BG선물', symbol:'BTC-PERP', price:'118,000', changePct:'▲ +180%', mood:'hype', side:'롱', leverage:'×20', entry:'118,000', liq:'112,100', pnl:'미실현 0', holding:'방금', moodLabel:'과열 · FOMO' },
+        choices: [
+          { label:'×100 한방에 전부 — 인생역전', danger:true, next:'w2_coin_liquidated', effects:{ cashAllInLoss:{ label:'코인 청산' }, flags:{ leverage_liquidated:true, coin_burned:true, leverage_hooked:true } } },
+          { label:'×20로 전 재산 진입', next:'w2_coin_burned', effects:{ cashLossPct:0.5, flags:{ coin_burned:true, leverage_hooked:true } } },
+          { label:'아직은 아니다. 앱을 닫는다', next:'w2_after_stock', effects:{ flags:{ leverage_resisted:true, temperance:true } } },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '다들 지금 안 타면 끝이라고 했다. 차트는 이미 꼭대기였는데, 손가락이 먼저 매수를 눌렀다.',
+    },
+    w2_coin_burned: {
+      header: '2주차 · 급락',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'cryptoExchange',
+        statusbar: { time: '3:08', battery: 21 },
+        exch: { name:'BG선물', symbol:'BTC-PERP', price:'59,000', changePct:'▼ -50%', mood:'fear', side:'롱', leverage:'×20', entry:'118,000', liq:'112,100', pnl:'-50% 평가손실', holding:'한 시간', moodLabel:'급락 · 손실' },
+        choices: [ { label:'손이 떨려서 손절한다', next:'w2_after_stock', effects:{ flags:{ coin_cut:true } } } ],
+      },
+      speaker: '{이름}(25)',
+      text: '꼭대기에서 탔으니 떨어지는 건 순식간이었다. 전 재산의 절반이 한 시간 만에 사라졌다. 바닥인 줄 알았는데, 다들 그렇게 말한다더라.',
+    },
+    w2_coin_liquidated: {
+      header: '2주차 · 청산',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'cryptoExchange',
+        statusbar: { time: '3:11', battery: 18 },
+        exch: { name:'BG선물', symbol:'BTC-PERP', price:'112,100', changePct:'▼ 청산', mood:'fear', side:'롱', leverage:'×100', entry:'118,000', liq:'112,100', pnl:'-100% 청산', holding:'5분', moodLabel:'강제청산' },
+        choices: [ { label:'멍하니 화면만 본다', next:'w2_after_stock', effects:{ flags:{ coin_cut:true } } } ],
+      },
+      speaker: '{이름}(25)',
+      text: '5분이었다. ×100은 5%만 빠져도 계좌를 0으로 만들었다. 방향은 맞았는데 배수가 날 죽였다.',
+    },
     w2_coin_leverage_win: {
       header: '2주차 · 반전',
       image: 'assets/week1/gosiwon/phone-face-dark.png',
@@ -834,6 +955,7 @@ window.STORY = {
         stock: { symbol: 'BTC 레버리지', code: 'BTC-PERP', buyPrice: 118000, resultMultiplier: 11 },
         choices: [
           { label: '수익을 실현하고 앱을 닫는다', next: 'w2_after_stock', effects: { flags: { coin_cashout: true } } },
+          { label: '수익을 다시 레버리지에 태운다', next: 'w2_coin_exchange', effects: { flags: { coin_rebet: true, pressure: true } } },
         ],
       },
       speaker: '{이름}(25)',
@@ -1106,7 +1228,57 @@ window.STORY = {
     },
 
     /* ========== 3주차 — 데이트, 그리고 균열 ========== */
-    w3_card: { type: 'card', header: '3주차', big: '3주차', sub: '마주 앉다', week: 3, next: 'w3_chat_check' },
+    w3_card: { type: 'card', header: '3주차', big: '3주차', sub: '마주 앉다', week: 3, next: 'w3_phone_home' },
+
+    w3_phone_home: {
+      header: '3주차 · 휴대폰',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'apps',
+        statusbar: { time: '12:17', battery: 68 },
+        homeTitle: '약속 전 화면',
+        homeSubtitle: '오늘은 딱 한 앱만 확인할 수 있을 것 같았다',
+        apps: [
+          { title: '까까오톡', meta: '유민아 · 새 메시지', icon: '톡', tone: 'chat', badge: '1' },
+          { title: '디사인사이드', meta: '데이트비 갤러리', icon: '디', tone: 'disa', badge: 'N' },
+          { title: '배금증권', meta: '알림은 나중에', icon: '증', tone: 'stock' },
+        ],
+        choices: [
+          { label: '까까오톡을 확인한다', next: 'w3_chat_check' },
+          { label: '디사인사이드 데이트비 갤러리를 본다', next: 'w3_disa_feed' },
+          { label: '폰을 잠그고 약속 장소로 간다', next: 'w3_open' },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '약속 시간 전, 폰 화면이 먼저 켜졌다.\n사람한테 온 메시지와, 모르는 사람들의 조언이 같은 줄에 있었다.',
+    },
+    w3_disa_feed: {
+      header: '3주차 · 디사인사이드',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'disaInside',
+        statusbar: { time: '12:19', battery: 67 },
+        disa: {
+          title: '디사인사이드',
+          subtitle: '데이트비 갤러리',
+          search: '데이트비, 카페, 국밥 검색',
+          badge: '개념',
+          tabs: ['전체글', '개념글', '연애갤'],
+          trend: ['데이트비', '카페값', '있는척', '국밥'],
+          posts: [
+            { no: 901, title: '첫 데이트에서 싼 데 가면 바로 컷임?', user: 'ㅇㅇ', meta: '조회 713 · 추천 12' },
+            { no: 900, title: '돈 없어도 솔직하면 된다는 말 믿지마라', user: '현실충', meta: '조회 1,903 · 추천 66', tag: '개념' },
+            { no: 899, title: '카페 계산 내가 했는데 지갑 사망함', user: '알바생', meta: '조회 488 · 추천 9' },
+            { no: 898, title: '국밥 좋아하는 여자 특', user: '국밥단', meta: '조회 1,102 · 추천 41', tag: '핫' },
+          ],
+        },
+        choices: [
+          { label: '앱을 닫고 약속 장소로 간다', next: 'w3_open', effects: { flags: { disa_w3_seen: true, date_fomo: true } } },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '댓글은 모두 아는 척을 했다.\n좋은 사람을 만나는 법보다, 없어 보이지 않는 법을 더 자세히 설명하고 있었다.',
+    },
 
     w3_chat_check: {
       header: '3주차 · 까까오톡',
@@ -1310,7 +1482,146 @@ window.STORY = {
     },
 
     /* ========== 4주차 — 결과 (베팅으로 자동 분기) ========== */
-    w4_card: { type: 'card', header: '4주차', big: '4주차', sub: '결과', week: 4, next: 'w4_chat_check' },
+    w4_card: { type: 'card', header: '4주차', big: '4주차', sub: '결과', week: 4, next: 'w4_phone_home' },
+    w4_phone_home: {
+      header: '4주차 · 휴대폰',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'apps',
+        statusbar: { time: '8:46', battery: 41 },
+        homeTitle: '결과 보기 전',
+        homeSubtitle: '화면마다 다른 말로 불안을 건드렸다',
+        apps: [
+          { title: '까까오톡', meta: '유민아 · 걱정 메시지', icon: '톡', tone: 'chat', badge: '1' },
+          { title: '디사인사이드', meta: '청산갤 · 개념글', icon: '디', tone: 'disa', badge: '32' },
+          { title: 'BG선물', meta: 'BTC 공포 알림 · -85%', icon: '₿', tone: 'coin', badge: '!' },
+          { title: '배금증권', meta: '평가손익 확인', icon: '증', tone: 'stock', badge: '!' },
+        ],
+        choices: [
+          { label: '까까오톡을 확인한다', next: 'w4_chat_check' },
+          { label: '디사인사이드 청산갤을 본다', next: 'w4_disa_feed' },
+          { label: 'BG선물 공포 바닥 알림을 연다', next: 'w4_coin_bottom', effects: { flags: { coin_bottom_alert: true, leverage_hooked: true } } },
+          { label: '바로 결과를 확인한다', next: 'w4_result' },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '결과 버튼을 누르기 전에 홈화면에서 멈췄다.\n누군가는 걱정했고, 누군가는 이미 승자와 패자를 나눠 놓고 있었다.\n\n그리고 코인 앱은, 다시 한 번 바닥이라는 단어를 띄우고 있었다.',
+    },
+    w4_disa_feed: {
+      header: '4주차 · 디사인사이드',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'disaInside',
+        statusbar: { time: '8:48', battery: 40 },
+        disa: {
+          title: '디사인사이드',
+          subtitle: '청산·손실 갤러리',
+          search: '청산, 미수, 대출 검색',
+          badge: '실시간',
+          tabs: ['전체글', '개념글', '손실인증'],
+          trend: ['청산', '미수금', '대출돌려막기', '손절'],
+          posts: [
+            { no: 4412, title: '오늘 결과 뜨면 한강 가는 애들 많겠네', user: 'ㅇㅇ', meta: '조회 2,333 · 추천 91', tag: '개념' },
+            { no: 4411, title: '수익 인증은 많은데 손실 인증은 왜 지움?', user: '의심병', meta: '조회 801 · 추천 28' },
+            { no: 4410, title: '유일한 공략: 남 돈 빌리지 마라', user: '살아남음', meta: '조회 1,112 · 추천 57', tag: '핫' },
+            { no: 4409, title: '아직 결과 안 봤는데 손이 떨림', user: '무직', meta: '조회 409 · 추천 6' },
+          ],
+        },
+        choices: [
+          { label: '앱을 닫고 결과를 확인한다', next: 'w4_result', effects: { flags: { disa_w4_seen: true, result_anxiety: true } } },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '모르는 사람들의 글인데, 내 방 안 소리처럼 들렸다.\n손실은 늘 남의 일처럼 시작해서, 어느 순간 내 이름표를 달고 있었다.',
+    },
+    w4_coin_bottom: {
+      header: '4주차 · 공포 바닥',
+      image: 'assets/week1/gosiwon/phone-face-dark.png',
+      phone: {
+        screen: 'cryptoExchange',
+        statusbar: { time: '8:50', battery: 39 },
+        exch: {
+          name: 'BG선물',
+          symbol: 'BTC-PERP',
+          price: '18,600',
+          changePct: '▼ -85%',
+          mood: 'fear',
+          side: '롱',
+          leverage: '×1',
+          entry: '대기',
+          liq: '없음',
+          pnl: '0',
+          holding: '2026년',
+          moodLabel: '역대급 공포 · 거래량 폭발',
+        },
+        choices: [
+          {
+            label: '바닥이다. 전 재산 롱으로 묻어둔다',
+            danger: true,
+            next: 'w4_coin_hold_2030',
+            effects: { flags: { coin_bottom_buy: true, coin_hold_started: true, pressure: true } },
+          },
+          {
+            label: '이번엔 못 믿겠다. 결과만 확인한다',
+            next: 'w4_result',
+            effects: { flags: { coin_bottom_skipped: true } },
+          },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '차트는 뉴스가 아니라 사고 현장 같았다.\n커뮤니티는 끝났다고 했고, 앱은 공포 지수를 빨갛게 깜빡였다.\n\n그런데 이상하게, 모두가 끝났다고 말하는 자리가 가장 조용한 입구처럼 보였다.',
+    },
+    w4_coin_hold_2030: {
+      type: 'card',
+      header: '4년 후',
+      big: '4년 후',
+      sub: '2030 · 반감기',
+      next: 'w4_coin_jackpot_2030',
+      effects: { flags: { coin_hold_2030: true } },
+    },
+    w4_coin_jackpot_2030: {
+      header: '2030 · 코인 대박',
+      image: 'assets/week5/computer.png',
+      phone: {
+        screen: 'cryptoExchange',
+        statusbar: { time: '10:30', battery: 91 },
+        exch: {
+          name: 'BG선물',
+          symbol: 'BTC-PERP',
+          balance: '11,000,000,000원 (110억)',
+          price: '204,600',
+          changePct: '▲ +1,000%',
+          mood: 'hype',
+          side: '롱',
+          leverage: '×1',
+          entry: '18,600',
+          liq: '없음',
+          pnl: '+10,900,000,000원',
+          holding: '4년',
+          moodLabel: '2030 반감기 · 신고가 돌파',
+        },
+        choices: [
+          {
+            label: '수익을 실현하고 100억 계좌로 넘어간다',
+            next: 'w4_result',
+            effects: { flags: { coin_cashout: true, gold_cashout: true, wealth_app_unlocked: true } },
+          },
+        ],
+      },
+      effects: {
+        cashAllInWin: { label: '2030 코인 +1,000%', multiplier: 10 },
+        setCash: 11000000000,
+        setDebt: 0,
+        flags: {
+          coin_success: true,
+          coin_jackpot: true,
+          stock_profit: 11000000000,
+          wealth_app_unlocked: true,
+        },
+      },
+      speaker: '{이름}(29)',
+      text: '2026년에 묻어 둔 포지션은, 2030년에 다른 숫자가 되어 있었다.\n\n수익률 +1,000%.\n잔고는 100억을 넘겼고, 예전의 방값과 밥값은 이제 차트의 한 칸보다 작아 보였다.\n\n웃음보다 먼저 손이 떨렸다. 이게 진짜 돈이 된 순간이었다.',
+    },
     w4_chat_check: {
       header: '4주차 · 까까오톡',
       image: 'assets/week1/gosiwon/phone-face-dark.png',
@@ -1775,7 +2086,64 @@ window.STORY = {
 
     /* ----- 생존 계열 (은 / 금) ----- */
     /* 유민아 만난 루트 */
-    w5b_card_y: { type: 'card', header: '5주차', big: '5주차', sub: '갈림길', week: 5, next: 'w5_chat_check_y' },
+    w5b_card_y: { type: 'card', header: '5주차', big: '5주차', sub: '갈림길', week: 5, next: 'w5_phone_home_y' },
+    w5_phone_home_y: {
+      header: '5주차 · 휴대폰',
+      image: 'assets/week5/computer.png',
+      phone: {
+        screen: 'apps',
+        statusbar: { time: '19:10', battery: 82 },
+        homeTitle: '100억 직전',
+        homeSubtitle: '알림이 사람보다 먼저 말을 걸었다',
+        apps: [
+          { title: '까까오톡', meta: '유민아 · BG PRIVATE', icon: '톡', tone: 'chat', badge: '3' },
+          { title: '디사인사이드', meta: '백억갤 · 개념글 폭주', icon: '디', tone: 'disa', badge: '99+' },
+          { title: '배금증권', meta: '수익률 정산 대기', icon: '증', tone: 'stock', badge: 'VIP' },
+          { title: 'BG Social', meta: '차량·부동산 콘텐츠', icon: 'S', tone: 'coin' },
+        ],
+        dock: [
+          { title: '전화', icon: '☎', tone: 'chat' },
+          { title: '뉴스', icon: 'N', tone: 'news' },
+          { title: '카메라', icon: 'C', tone: 'disa' },
+          { title: '설정', icon: '⚙', tone: 'stock' },
+        ],
+        choices: [
+          { label: '까까오톡을 연다', next: 'w5_chat_check_y' },
+          { label: '디사인사이드 백억갤을 본다', next: 'w5_disa_feed_y' },
+          { label: '바로 선택 화면으로 간다', next: 'w5b_choice_y' },
+        ],
+      },
+      speaker: '{이름}(25)', relationOf: 'yumina',
+      text: '책상 위 화면과 폰 화면이 동시에 밝아졌다.\n예전엔 앱을 눌러 돈을 찾았는데, 이제는 앱들이 먼저 나를 찾고 있었다.',
+    },
+    w5_disa_feed_y: {
+      header: '5주차 · 디사인사이드',
+      image: 'assets/week5/computer.png',
+      phone: {
+        screen: 'disaInside',
+        statusbar: { time: '19:11', battery: 82 },
+        disa: {
+          title: '디사인사이드',
+          subtitle: '백억 인증 갤러리',
+          search: '100억, 코인성공, 프라이빗 검색',
+          badge: '실북갤 1위',
+          tabs: ['전체글', '개념글', '인증'],
+          trend: ['100억인증', '국밥약속', '프라이빗', '한강뷰'],
+          posts: [
+            { no: 9012, title: '국장 도박 코인 다 맞춘 사람 진짜 있음?', user: 'ㅇㅇ', meta: '조회 34,802 · 추천 821', tag: '개념' },
+            { no: 9011, title: '100억 찍어도 국밥 약속 지키면 그건 인정', user: '밥약속', meta: '조회 12,440 · 추천 312', tag: '핫' },
+            { no: 9010, title: 'BG PRIVATE 초대장 뜨면 다음은 차고 해금임', user: '자산관리', meta: '조회 8,110 · 추천 154' },
+            { no: 9009, title: '돈 많아지면 연락도 알림처럼 쌓이는구나', user: '관찰자', meta: '조회 5,731 · 추천 88' },
+          ],
+        },
+        choices: [
+          { label: '홈화면으로 돌아간다', next: 'w5_phone_home_y', effects: { flags: { disa_w5_seen: true } } },
+          { label: '채팅앱을 연다', next: 'w5_chat_check_y', effects: { flags: { disa_w5_seen: true } } },
+        ],
+      },
+      speaker: '{이름}(25)', relationOf: 'yumina',
+      text: '처음 보는 사람들이 내 인생을 글 제목처럼 요약하고 있었다.\n웃긴 건, 그 요약 중에 유민아와의 국밥 약속이 제일 오래 남았다는 점이었다.',
+    },
     w5_chat_check_y: {
       header: '5주차 · 까까오톡',
       image: 'assets/week1/gosiwon/phone-face-dark.png',
@@ -1903,7 +2271,64 @@ window.STORY = {
       ],
     },
     /* 유민아 못 만난 루트 */
-    w5b_card_n: { type: 'card', header: '5주차', big: '5주차', sub: '갈림길', week: 5, next: 'w5_chat_check_n' },
+    w5b_card_n: { type: 'card', header: '5주차', big: '5주차', sub: '갈림길', week: 5, next: 'w5_phone_home_n' },
+    w5_phone_home_n: {
+      header: '5주차 · 휴대폰',
+      image: 'assets/week5/computer.png',
+      phone: {
+        screen: 'apps',
+        statusbar: { time: '19:10', battery: 82 },
+        homeTitle: '100억 직전',
+        homeSubtitle: '축하보다 인증 요구가 먼저 쌓였다',
+        apps: [
+          { title: '까까오톡', meta: 'BG PRIVATE · 투자방', icon: '톡', tone: 'chat', badge: '99+' },
+          { title: '디사인사이드', meta: '백억갤 · 인증글 대기', icon: '디', tone: 'disa', badge: '99+' },
+          { title: '배금증권', meta: '수익률 정산 대기', icon: '증', tone: 'stock', badge: 'VIP' },
+          { title: 'BG Social', meta: '팔로워 급등 알림', icon: 'S', tone: 'coin' },
+        ],
+        dock: [
+          { title: '전화', icon: '☎', tone: 'chat' },
+          { title: '뉴스', icon: 'N', tone: 'news' },
+          { title: '카메라', icon: 'C', tone: 'disa' },
+          { title: '설정', icon: '⚙', tone: 'stock' },
+        ],
+        choices: [
+          { label: '까까오톡을 연다', next: 'w5_chat_check_n' },
+          { label: '디사인사이드 백억갤을 본다', next: 'w5_disa_feed_n' },
+          { label: '바로 선택 화면으로 간다', next: 'w5b_choice_n' },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '폰은 조용하지 않았다.\n하지만 그 많은 알림 중에 내 이름을 부르는 사람은 없었다.',
+    },
+    w5_disa_feed_n: {
+      header: '5주차 · 디사인사이드',
+      image: 'assets/week5/computer.png',
+      phone: {
+        screen: 'disaInside',
+        statusbar: { time: '19:11', battery: 82 },
+        disa: {
+          title: '디사인사이드',
+          subtitle: '백억 인증 갤러리',
+          search: '100억 인증, 코인 레버리지 검색',
+          badge: '실북갤 1위',
+          tabs: ['전체글', '개념글', '인증'],
+          trend: ['인증요구', '레버리지', '프라이빗', '외로운성공'],
+          posts: [
+            { no: 9104, title: '100억 인증 없으면 다 주작임', user: 'ㅇㅇ', meta: '조회 41,331 · 추천 902', tag: '개념' },
+            { no: 9103, title: '성공하면 사람 생길 줄 알았는데 알림만 생김', user: '무음모드', meta: '조회 19,008 · 추천 487', tag: '핫' },
+            { no: 9102, title: 'BG PRIVATE 초대장 받은 애들 루트 정리', user: '정리충', meta: '조회 11,552 · 추천 201' },
+            { no: 9101, title: '다음 종목 물어보는 사람만 300명 됨', user: '형님됨', meta: '조회 7,770 · 추천 124' },
+          ],
+        },
+        choices: [
+          { label: '홈화면으로 돌아간다', next: 'w5_phone_home_n', effects: { flags: { disa_w5_seen: true } } },
+          { label: '채팅앱을 연다', next: 'w5_chat_check_n', effects: { flags: { disa_w5_seen: true } } },
+        ],
+      },
+      speaker: '{이름}(25)',
+      text: '게시글들은 내 성공을 먼저 믿지 않았고, 믿은 다음엔 바로 다음 번호를 물었다.\n이상하게 축하보다 의심이 더 익숙했다.',
+    },
     w5_chat_check_n: {
       header: '5주차 · 까까오톡',
       image: 'assets/week1/gosiwon/phone-face-dark.png',
@@ -2083,7 +2508,7 @@ window.STORY = {
           { title: 'SNS', meta: '데이트 콘텐츠 대기', icon: 'SNS', tone: 'sns' },
         ],
         choices: [
-          { label: 'VIP 차고에서 차량을 먼저 출고한다', next: 'w5_gold_car_buy', effects: { cash: -1200000000, assets: 1200000000, flags: { asset_car: true, sns_unlocked: true }, unlock: ['week5_car'] } },
+          { label: 'VIP 차고에서 차량을 먼저 출고한다', next: 'w5_gold_car_buy', effects: { cash: -1200000000, assets: 1200000000, happy: 1, flags: { asset_car: true, sns_unlocked: true }, unlock: ['week5_car'] } },
         ],
       },
       speaker: '{이름}(25)', relationOf: 'yumina',
@@ -2105,7 +2530,7 @@ window.STORY = {
           { title: 'SNS', meta: '인증 콘텐츠 대기', icon: 'SNS', tone: 'sns' },
         ],
         choices: [
-          { label: 'VIP 차고에서 차량을 먼저 출고한다', next: 'w5_gold_car_buy', effects: { cash: -1200000000, assets: 1200000000, flags: { asset_car: true, sns_unlocked: true }, unlock: ['week5_car'] } },
+          { label: 'VIP 차고에서 차량을 먼저 출고한다', next: 'w5_gold_car_buy', effects: { cash: -1200000000, assets: 1200000000, happy: 1, flags: { asset_car: true, sns_unlocked: true }, unlock: ['week5_car'] } },
         ],
       },
       speaker: '{이름}(25)',
@@ -2160,7 +2585,7 @@ window.STORY = {
           { kind: 'HOME', name: '주거용 고급아파트', meta: '투자용 매입 후 계약 가능', choiceNext: 'w5_gold_home_buy', flag: 'asset_home', thumb: 'assets/week5/luxury_apartment.png' },
         ],
         choices: [
-          { label: '한강 투자용 아파트를 매입한다', next: 'w5_gold_property_buy', effects: { cash: -4500000000, assets: 5200000000, flags: { asset_property: true }, unlock: ['week5_property'] } },
+          { label: '한강 투자용 아파트를 매입한다', next: 'w5_gold_property_buy', effects: { cash: -4500000000, assets: 5200000000, happy: 1, flags: { asset_property: true }, unlock: ['week5_property'] } },
         ],
       },
       speaker: '{이름}(25)',
@@ -2172,7 +2597,7 @@ window.STORY = {
       speaker: '{이름}(25)',
       text: '전자서명 하나로 계약서가 넘어왔다.\n"한강"이라는 두 글자가 주소 맨 앞에 붙어 있었다.\n\n주식은 그냥 숫자였는데, 이건 지도에 찍히는 땅이었다.',
       choices: [
-        { label: '주거용 고급아파트도 계약한다', next: 'w5_gold_home_buy', effects: { cash: -3000000000, assets: 3400000000, flags: { asset_home: true }, unlock: ['week5_home'] } },
+        { label: '주거용 고급아파트도 계약한다', next: 'w5_gold_home_buy', effects: { cash: -3000000000, assets: 3400000000, happy: 1, flags: { asset_home: true }, unlock: ['week5_home'] } },
       ],
     },
     w5_gold_home_buy: {
@@ -2220,7 +2645,7 @@ window.STORY = {
           { tag: 'APT', title: '한강뷰 입주', meta: '주거용 고급아파트', likes: '♥ 31.9만' },
         ],
         choices: [
-          { label: 'SNS 수익과 자산 평가액을 정산한다', next: 'ed_gold_rich', effects: { cash: 740000000, assets: 1300000000, flags: { sns_income: true, asset_income: true }, unlock: ['week5_sns_gold'] } },
+          { label: 'SNS 수익과 자산 평가액을 정산한다', next: 'ed_gold_rich', effects: { cash: 740000000, assets: 1300000000, happy: 1, flags: { sns_income: true, asset_income: true }, unlock: ['week5_sns_gold'] } },
         ],
       },
       speaker: '{이름}(25)', relationOf: 'yumina',
@@ -2244,7 +2669,7 @@ window.STORY = {
           { tag: 'HOME', title: '한강뷰 입주', meta: '주거용 고급아파트', likes: '♥ 27.1만' },
         ],
         choices: [
-          { label: 'SNS 수익과 자산 평가액을 정산한다', next: 'ed_gold_rich', effects: { cash: 580000000, assets: 1100000000, flags: { sns_income: true, asset_income: true }, unlock: ['week5_sns_gold'] } },
+          { label: 'SNS 수익과 자산 평가액을 정산한다', next: 'ed_gold_rich', effects: { cash: 580000000, assets: 1100000000, happy: 1, flags: { sns_income: true, asset_income: true }, unlock: ['week5_sns_gold'] } },
         ],
       },
       speaker: '{이름}(25)',

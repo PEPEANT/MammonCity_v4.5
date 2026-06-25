@@ -378,6 +378,12 @@ window.PhoneWidget = (function () {
       : choices.map(choice => ({ title: choice.label || '앱', meta: '' }));
     const title = esc(cfg.homeTitle || '휴대폰');
     const subtitle = esc(cfg.homeSubtitle || '어떤 앱을 열까');
+    const dock = Array.isArray(cfg.dock) ? cfg.dock : [
+      { title: '전화', icon: '전' },
+      { title: '까톡', icon: '톡' },
+      { title: '뉴스', icon: 'N' },
+      { title: '설정', icon: '설' },
+    ];
 
     return `
       <div class="ph2-apps">
@@ -388,16 +394,64 @@ window.PhoneWidget = (function () {
         <div class="ph2-app-grid">
           ${apps.map((app, i) => {
             const choice = choices[i] || {};
-            const disabled = choice.disabled ? ' disabled' : '';
+            const disabled = (choice.disabled || app.disabled) ? ' disabled' : '';
             const tone = app.tone ? ` ${esc(app.tone)}` : '';
+            const badge = app.badge ? `<em>${esc(app.badge)}</em>` : '';
             return `
               <button type="button" class="ph2-app-tile${tone}" data-phone-choice="${i}"${disabled}>
-                <span class="ph2-app-icon" aria-hidden="true">${esc(app.icon || '')}</span>
+                <span class="ph2-app-icon" aria-hidden="true">${esc(app.icon || '')}${badge}</span>
                 <b>${esc(app.title || choice.label || '앱')}</b>
                 <small>${esc(app.meta || '')}</small>
               </button>`;
           }).join('')}
         </div>
+        <div class="ph2-app-dock">
+          ${dock.map(app => `
+            <div class="ph2-dock-app ${esc(app.tone || '')}">
+              <span>${esc(app.icon || '')}</span>
+              <small>${esc(app.title || '')}</small>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 화면: 디사인사이드 ---------- */
+  function screenDisaInside(cfg) {
+    const d = cfg.disa || {};
+    const tabs = Array.isArray(d.tabs) && d.tabs.length ? d.tabs : ['전체글', '개념글', '실북갤'];
+    const posts = Array.isArray(d.posts) && d.posts.length ? d.posts : [
+      { no: 1042, title: '배금전자 지금 들어가도 되냐', user: 'ㅇㅇ', meta: '조회 812 · 추천 31', tag: '개념' },
+      { no: 1041, title: '대출 받아서 홀짝 치는 거 정상임?', user: '익명', meta: '조회 433 · 추천 7' },
+      { no: 1040, title: '인생 역전 인증 모음', user: '차트충', meta: '조회 1,921 · 추천 84', tag: '핫' },
+    ];
+    const trend = Array.isArray(d.trend) ? d.trend : ['배금전자', '코인청산', '홀짝', '국장'];
+    return `
+      <div class="ph2-disa">
+        <div class="ph2-disa-top">
+          <div>
+            <b>${esc(d.title || '디사인사이드')}</b>
+            <span>${esc(d.subtitle || '배금도시 갤러리')}</span>
+          </div>
+          <em>${esc(d.badge || 'LIVE')}</em>
+        </div>
+        <div class="ph2-disa-search">${esc(d.search || '갤러리, 글 검색')}</div>
+        <div class="ph2-disa-tabs">
+          ${tabs.map((tab, i) => `<span class="${i === 1 ? 'on' : ''}">${esc(tab)}</span>`).join('')}
+        </div>
+        <div class="ph2-disa-trend">
+          ${trend.map((item, i) => `<span>${i + 1}. ${esc(item)}</span>`).join('')}
+        </div>
+        <div class="ph2-disa-list">
+          ${posts.map(post => `
+            <div class="ph2-disa-post ${post.tag ? 'hot' : ''}">
+              <div class="ph2-disa-no">${esc(post.no || '')}</div>
+              <div class="ph2-disa-main">
+                <b>${post.tag ? `<i>${esc(post.tag)}</i>` : ''}${esc(post.title || '')}</b>
+                <span>${esc(post.user || 'ㅇㅇ')} · ${esc(post.meta || '')}</span>
+              </div>
+            </div>`).join('')}
+        </div>
+        ${phoneChoicesHTML(cfg)}
       </div>`;
   }
 
@@ -548,6 +602,69 @@ window.PhoneWidget = (function () {
       </div>`;
   }
 
+  /* ---------- 화면: 코인 선물 거래소 ---------- */
+  function screenCryptoExchange(cfg, state) {
+    const e = cfg.exch || {};
+    const economy = economyOf(state);
+    const name = e.name || 'BG선물';
+    const symbol = e.symbol || 'BTC-PERP';
+    const price = e.price || '0';
+    const changePct = e.changePct || '0.0%';
+    const down = String(changePct).trim().replace('▼', '').replace('▲', '').trim().startsWith('-')
+      || /▼/.test(changePct) || e.mood === 'fear';
+    const side = e.side || '롱';
+    const lev = e.leverage || '';
+    const balance = typeof e.balance === 'number'
+      ? wonEok(e.balance)
+      : (e.balance || wonEok(economy.cash || 0));
+    const metrics = [
+      ['진입가', e.entry || '—'],
+      ['청산가', e.liq || '—'],
+      ['평가손익', e.pnl || '—'],
+      ['보유기간', e.holding || '—'],
+    ];
+    const btns = (Array.isArray(cfg.choices) ? cfg.choices : []).map((c, i) =>
+      `<button type="button" class="ph2-exch-btn${c.danger ? ' danger' : ''}" data-phone-choice="${i}">${esc(c.label || '')}</button>`).join('');
+    return `
+      <div class="ph2-exch">
+        <div class="ph2-exch-bar">
+          <span class="ph2-exch-brand"><i></i>${esc(name)}</span>
+          <span class="ph2-exch-bal">${esc(balance)}</span>
+        </div>
+        <div class="ph2-exch-head">
+          <div class="ph2-exch-sym">${esc(symbol)}${lev ? `<span class="ph2-exch-lev">${esc(lev)}</span>` : ''}</div>
+          <div class="ph2-exch-price ${down ? 'down' : 'up'}">${esc(price)}<small>${esc(changePct)}</small></div>
+        </div>
+        <div class="ph2-exch-chart ${down ? 'down' : 'up'}">
+          ${cryptoChartHTML(down)}
+          <span class="ph2-exch-mood">${esc(e.moodLabel || (down ? '공포 · 거래량 폭발' : '과열 · FOMO'))}</span>
+        </div>
+        <div class="ph2-exch-side">
+          <span class="long ${side === '롱' ? 'on' : ''}">롱</span>
+          <span class="short ${side === '숏' ? 'on' : ''}">숏</span>
+        </div>
+        <div class="ph2-exch-pos">
+          ${metrics.map(([l, v]) => `<div><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('')}
+        </div>
+        ${btns ? `<div class="ph2-exch-actions">${btns}</div>` : ''}
+      </div>`;
+  }
+
+  function cryptoChartHTML(down) {
+    // 폭락(공포) 차트 또는 과열 급등 차트 — 간단 폴리라인
+    const w = 280, h = 78;
+    const pts = down
+      ? [[0, 12], [40, 20], [90, 14], [140, 40], [200, 60], [240, 70], [280, 72]]
+      : [[0, 70], [50, 60], [100, 64], [150, 40], [200, 24], [245, 12], [280, 8]];
+    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' ');
+    const area = `${line} L${w},${h} L0,${h} Z`;
+    const col = down ? '#e8392f' : '#1db089';
+    return `<svg class="ph2-exch-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${area}" fill="${col}" fill-opacity="0.12"/>
+        <path d="${line}" fill="none" stroke="${col}" stroke-width="2"/>
+      </svg>`;
+  }
+
   /* ---------- 화면: SNS 피드 ---------- */
   function screenSnsFeed(cfg, state) {
     const flags = (state && state.flags) || {};
@@ -610,6 +727,56 @@ window.PhoneWidget = (function () {
             <div class="ph2-yt-shorts">
               ${shorts.map(sh => `<div class="ph2-yt-short${sh.tone ? ' t-' + esc(sh.tone) : ''}"><span>${esc(sh.title || '')}</span></div>`).join('')}
             </div>` : ''}
+        </div>
+        ${phoneChoicesHTML(cfg)}
+      </div>`;
+  }
+
+  /* ---------- 화면: 뉴스앱 ---------- */
+  function screenNewsApp(cfg) {
+    const news = cfg.news || {};
+    const tabs = Array.isArray(news.tabs) && news.tabs.length
+      ? news.tabs
+      : ['속보', '경제', '증권', '코인'];
+    const market = Array.isArray(news.market) ? news.market : [];
+    const related = Array.isArray(news.related) ? news.related : [];
+    const bullets = Array.isArray(news.bullets) ? news.bullets : [];
+    return `
+      <div class="ph2-news">
+        <div class="ph2-news-top">
+          <div class="ph2-news-brand">
+            <b>${esc(news.brand || '배금뉴스')}</b>
+            <span>${esc(news.updated || '방금 업데이트')}</span>
+          </div>
+          <div class="ph2-news-icons">🔔  검색</div>
+        </div>
+        <div class="ph2-news-tabs">
+          ${tabs.map((tab, i) => `<span class="${i === 0 ? 'on' : ''}">${esc(tab)}</span>`).join('')}
+        </div>
+        <div class="ph2-news-body">
+          <article class="ph2-news-main">
+            <div class="ph2-news-kicker">${esc(news.kicker || '경제 속보')}</div>
+            <h2>${esc(news.headline || '')}</h2>
+            <p>${esc(news.dek || '')}</p>
+            ${bullets.length ? `<div class="ph2-news-bullets">
+              ${bullets.map(item => `<div><span></span>${esc(item)}</div>`).join('')}
+            </div>` : ''}
+          </article>
+          ${market.length ? `<div class="ph2-news-market">
+            ${market.map(item => `
+              <div class="ph2-news-market-row">
+                <span>${esc(item.name || '')}</span>
+                <b class="${item.down ? 'down' : 'up'}">${esc(item.value || '')}</b>
+              </div>`).join('')}
+          </div>` : ''}
+          ${related.length ? `<div class="ph2-news-related">
+            <div class="ph2-news-section-title">관련 뉴스</div>
+            ${related.map(item => `
+              <div class="ph2-news-related-row">
+                <b>${esc(item.title || '')}</b>
+                <span>${esc(item.source || '')}${item.time ? ` · ${esc(item.time)}` : ''}</span>
+              </div>`).join('')}
+          </div>` : ''}
         </div>
         ${phoneChoicesHTML(cfg)}
       </div>`;
@@ -1197,7 +1364,10 @@ window.PhoneWidget = (function () {
     assetStore: screenAssetStore,
     bankApp: screenBankApp,
     snsFeed: screenSnsFeed,
+    newsApp: screenNewsApp,
+    disaInside: screenDisaInside,
     youtube: screenYoutube,
+    cryptoExchange: screenCryptoExchange,
     market: screenMarket,
     community: screenCommunity,
     orderDecision: screenOrderDecision,
@@ -1220,7 +1390,7 @@ window.PhoneWidget = (function () {
     const first = cfg.screen || (cfg.sequence && cfg.sequence[0]) || 'ringing';
     const frameClass = cfg.frame === 'desktop' || cfg.device === 'desktop' ? ' ph2-device-desktop' : '';
     const kindClass = first === 'messages' ? ' ph2-device-msg'
-      : ['chatRooms', 'apps', 'wealthHub', 'assetStore', 'bankApp', 'snsFeed', 'youtube', 'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult', 'oddEvenGame', 'ladder', 'casino', 'blackjackGame', 'blackjack'].includes(first) ? ' ph2-device-stock'
+      : ['chatRooms', 'apps', 'wealthHub', 'assetStore', 'bankApp', 'snsFeed', 'newsApp', 'disaInside', 'youtube', 'cryptoExchange', 'market', 'community', 'orderDecision', 'orderFilled', 'marketResult', 'missedResult', 'oddEvenGame', 'ladder', 'casino', 'blackjackGame', 'blackjack'].includes(first) ? ' ph2-device-stock'
       : '';
     return `
       <div class="ph2-device${kindClass}${frameClass}" data-state="${esc(first)}">

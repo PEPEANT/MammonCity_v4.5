@@ -63,6 +63,7 @@
 .ph2-device {
   position: relative;
   width: min(62%, 232px);
+  max-height: calc(100% - 16px);
   aspect-ratio: 9 / 19;
   display: flex;
   flex-direction: column;
@@ -927,6 +928,233 @@
   background: #eef0f3;
 }
 
+/* ===== 뉴스앱 화면 ===== */
+.ph2-news {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f6f7f9;
+  color: #111418;
+  overflow: hidden;
+}
+
+.ph2-news-top {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 8px 10px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #e3e6eb;
+}
+
+.ph2-news-brand b,
+.ph2-news-brand span {
+  display: block;
+}
+
+.ph2-news-brand b {
+  color: #111418;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.ph2-news-brand span {
+  margin-top: 2px;
+  color: #858d99;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-news-icons {
+  color: #4a5361;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-news-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border-bottom: 1px solid #e8ebef;
+  overflow: hidden;
+}
+
+.ph2-news-tabs span {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #eef1f5;
+  color: #5d6674;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ph2-news-tabs span.on {
+  background: #16213a;
+  color: #ffffff;
+}
+
+.ph2-news-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.ph2-news-main {
+  padding: 12px;
+  border: 1px solid #e0e4ea;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(30, 35, 45, 0.06);
+}
+
+.ph2-news-kicker {
+  display: inline-flex;
+  margin-bottom: 7px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: #d92525;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.ph2-news-main h2 {
+  margin: 0;
+  color: #111418;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.2;
+  word-break: keep-all;
+}
+
+.ph2-news-main p {
+  margin: 8px 0 0;
+  color: #4b5564;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.ph2-news-bullets {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ph2-news-bullets div {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #323946;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.ph2-news-bullets span {
+  flex: 0 0 auto;
+  width: 4px;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #d92525;
+}
+
+.ph2-news-market {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ph2-news-market-row {
+  min-height: 42px;
+  padding: 8px;
+  border: 1px solid #e2e6eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ph2-news-market-row span,
+.ph2-news-market-row b {
+  display: block;
+}
+
+.ph2-news-market-row span {
+  color: #6b7480;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-news-market-row b {
+  margin-top: 3px;
+  color: #d83b32;
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.ph2-news-market-row b.down {
+  color: #2f74d0;
+}
+
+.ph2-news-related {
+  margin-top: 9px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e6eb;
+}
+
+.ph2-news-section-title {
+  margin-bottom: 7px;
+  color: #7c8490;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.ph2-news-related-row {
+  padding: 7px 0;
+  border-top: 1px solid #edf0f3;
+}
+
+.ph2-news-related-row:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.ph2-news-related-row b,
+.ph2-news-related-row span {
+  display: block;
+}
+
+.ph2-news-related-row b {
+  overflow: hidden;
+  color: #1f2630;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ph2-news-related-row span {
+  margin-top: 2px;
+  color: #8b939e;
+  font-size: 8px;
+  font-weight: 800;
+}
+
 /* ===== 유튜브(FOMO 뉴스) 화면 ===== */
 .ph2-yt {
   height: 100%;
@@ -1271,6 +1499,73 @@
 .ph2-shop-owned { font-size: 11px; font-weight: 900; color: #1db089; }
 .ph2-shop-lock { font-size: 10px; font-weight: 800; color: #6a665c; }
 
+/* ===== 코인 선물 거래소 (BG선물) ===== */
+.ph2-exch {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0b0e11;
+  color: #eaecef;
+}
+.ph2-exch-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(234, 236, 239, 0.1);
+}
+.ph2-exch-brand { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 900; color: #f0b90b; }
+.ph2-exch-brand i { width: 13px; height: 13px; border-radius: 4px; background: #f0b90b; }
+.ph2-exch-bal { font-size: 10px; font-weight: 800; color: #848e9c; }
+.ph2-exch-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 10px 12px 6px;
+}
+.ph2-exch-sym { font-size: 13px; font-weight: 900; display: flex; align-items: center; gap: 6px; }
+.ph2-exch-lev { font-size: 9px; font-weight: 900; color: #f0b90b; border: 1px solid #f0b90b; border-radius: 4px; padding: 1px 4px; }
+.ph2-exch-price { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; text-align: right; }
+.ph2-exch-price small { display: block; font-size: 10px; font-weight: 800; }
+.ph2-exch-price.up, .ph2-exch-price.up small { color: #0ecb81; }
+.ph2-exch-price.down, .ph2-exch-price.down small { color: #f6465d; }
+.ph2-exch-chart { position: relative; flex: 0 0 auto; margin: 0 10px; }
+.ph2-exch-svg { display: block; width: 100%; height: 78px; }
+.ph2-exch-mood {
+  position: absolute; left: 8px; bottom: 6px;
+  font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+}
+.ph2-exch-chart.down .ph2-exch-mood { color: #f6465d; }
+.ph2-exch-chart.up .ph2-exch-mood { color: #0ecb81; }
+.ph2-exch-side { display: flex; gap: 6px; padding: 8px 10px 4px; }
+.ph2-exch-side span {
+  flex: 1; text-align: center; padding: 6px 0; border-radius: 7px;
+  font-size: 11px; font-weight: 900; background: #1b2026; color: #5e6673;
+}
+.ph2-exch-side .long.on { background: rgba(14, 203, 129, 0.18); color: #0ecb81; }
+.ph2-exch-side .short.on { background: rgba(246, 70, 93, 0.18); color: #f6465d; }
+.ph2-exch-pos {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 10px;
+}
+.ph2-exch-pos div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+  padding: 8px 10px; border-radius: 8px; background: #12161b; border: 1px solid rgba(234, 236, 239, 0.07);
+}
+.ph2-exch-pos span { color: #848e9c; font-size: 9px; font-weight: 800; }
+.ph2-exch-pos b { font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.ph2-exch-actions { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-top: 1px solid rgba(234, 236, 239, 0.1); }
+.ph2-exch-btn {
+  min-height: 38px; border: 0; border-radius: 9px;
+  background: #0ecb81; color: #07101a; font-size: 12px; font-weight: 900;
+}
+.ph2-exch-btn:active { background: #0bb673; }
+.ph2-exch-btn.danger { background: #f6465d; color: #fff; }
+.ph2-exch-btn.danger:active { background: #d83a4f; }
+
 .ph2-community-feed {
   position: relative;
   flex: 1 1 auto;
@@ -1412,12 +1707,15 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 20px 16px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 14px 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 38%),
-    #11151c;
+    radial-gradient(circle at 18% 12%, rgba(81, 138, 255, 0.48), transparent 30%),
+    radial-gradient(circle at 88% 24%, rgba(226, 59, 48, 0.34), transparent 28%),
+    linear-gradient(155deg, #101827 0%, #182237 44%, #0b0f19 100%);
   color: #f5efe2;
+  overflow: hidden;
 }
 
 .ph2-apps-head b,
@@ -1426,76 +1724,325 @@
 }
 
 .ph2-apps-head b {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 900;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.32);
 }
 
 .ph2-apps-head span {
   margin-top: 4px;
-  color: #9aa3af;
+  color: rgba(245, 239, 226, 0.7);
   font-size: 10px;
   font-weight: 900;
 }
 
 .ph2-app-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 8px;
+  align-content: start;
+  padding: 8px 0 0;
 }
 
 .ph2-app-tile {
-  min-height: 116px;
+  min-height: 74px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 12px;
-  border: 1px solid rgba(245, 239, 226, 0.13);
-  border-radius: 14px;
-  background: #202630;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: #f5efe2;
-  text-align: left;
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  box-shadow: none;
 }
 
 .ph2-app-tile:active {
-  transform: translateY(1px);
+  transform: scale(0.96);
+}
+
+.ph2-app-tile:disabled {
+  opacity: 0.42;
 }
 
 .ph2-app-icon {
-  width: 34px;
-  height: 34px;
+  position: relative;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
-  background: #e6bd5b;
+  border-radius: 13px;
+  background: linear-gradient(155deg, #e6bd5b, #f2db8e);
   color: #14171d;
-  font-size: 17px;
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+}
+
+.ph2-app-icon em {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  min-width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e23b30;
+  color: #fff;
+  font-size: 7px;
+  font-style: normal;
   font-weight: 900;
 }
 
 .ph2-app-tile.gamble .ph2-app-icon {
-  background: #e23b30;
+  background: linear-gradient(155deg, #ff5a4e, #c8211b);
   color: #fff;
 }
 
 .ph2-app-tile.stock .ph2-app-icon {
-  background: #4d8cff;
+  background: linear-gradient(155deg, #64a1ff, #2464d8);
+  color: #fff;
+}
+
+.ph2-app-tile.chat .ph2-app-icon {
+  background: linear-gradient(155deg, #ffe86a, #f2c438);
+  color: #15120b;
+}
+
+.ph2-app-tile.news .ph2-app-icon {
+  background: linear-gradient(155deg, #ffffff, #dbe3ee);
+  color: #14213d;
+}
+
+.ph2-app-tile.disa .ph2-app-icon {
+  background: linear-gradient(155deg, #5f7cff, #263f9a);
+  color: #fff;
+}
+
+.ph2-app-tile.coin .ph2-app-icon {
+  background: linear-gradient(155deg, #f0b84a, #a66714);
   color: #fff;
 }
 
 .ph2-app-tile b {
-  margin-top: 12px;
-  font-size: 14px;
+  width: 100%;
+  overflow: hidden;
+  color: #ffffff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
   font-weight: 900;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
 }
 
 .ph2-app-tile small {
-  min-height: 24px;
-  color: #aab2bf;
+  display: none;
+}
+
+.ph2-app-dock {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.ph2-dock-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+}
+
+.ph2-dock-app span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #182237;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ph2-dock-app small {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 7px;
+  font-weight: 900;
+}
+
+/* ===== 디사인사이드(가상 커뮤니티) ===== */
+.ph2-disa {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f0f2f6;
+  color: #141821;
+  overflow: hidden;
+}
+
+.ph2-disa-top {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 10px 11px 8px;
+  background: #263f9a;
+  color: #fff;
+}
+
+.ph2-disa-top b,
+.ph2-disa-top span {
+  display: block;
+}
+
+.ph2-disa-top b {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.ph2-disa-top span {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.74);
   font-size: 8px;
   font-weight: 900;
-  line-height: 1.35;
+}
+
+.ph2-disa-top em {
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.ph2-disa-search {
+  margin: 8px 10px 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #8b93a0;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.ph2-disa-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px 6px;
+}
+
+.ph2-disa-tabs span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #5c6472;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-disa-tabs span.on {
+  background: #263f9a;
+  color: #fff;
+}
+
+.ph2-disa-trend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0 10px 8px;
+}
+
+.ph2-disa-trend span {
+  overflow: hidden;
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #263f9a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ph2-disa-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 10px 8px;
+  border: 1px solid #dfe4eb;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.ph2-disa-post {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 6px;
+  padding: 7px 8px;
+  border-top: 1px solid #edf0f4;
+}
+
+.ph2-disa-post:first-child {
+  border-top: 0;
+}
+
+.ph2-disa-post.hot {
+  background: #f7f9ff;
+}
+
+.ph2-disa-no {
+  color: #9aa2ad;
+  font-size: 8px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.ph2-disa-main {
+  min-width: 0;
+}
+
+.ph2-disa-main b,
+.ph2-disa-main span {
+  display: block;
+}
+
+.ph2-disa-main b {
+  overflow: hidden;
+  color: #151923;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ph2-disa-main b i {
+  margin-right: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #e23b30;
+  color: #fff;
+  font-size: 7px;
+  font-style: normal;
+}
+
+.ph2-disa-main span {
+  margin-top: 3px;
+  color: #7f8793;
+  font-size: 8px;
+  font-weight: 800;
 }
 
 .ph2-wealth,

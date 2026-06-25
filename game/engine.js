@@ -884,11 +884,18 @@ function isDesperateChoice(ch) {
 /* --- 엔딩 카드 --- */
 function renderEnd(sc) {
   const happy = clampHappy(state.meters && state.meters.happy);
+  const cash = formatWonEok(state.economy.cash);
+  const worth = formatWonEok(netWorth());
   els.stage.innerHTML = `
     <div class="card-screen" id="endScreen">
       <div class="card-big">${fill(sc.big || 'THE END')}</div>
       ${sc.sub ? `<div class="card-sub">${fill(sc.sub)}</div>` : ''}
-      <div class="card-stat">최종 행복 ${happy}/${MAX_HAPPY}</div>
+      <div class="card-final">
+        <div class="card-final-title">최종 상태</div>
+        <div class="card-final-row"><span>행복도</span><b>${happy}/${MAX_HAPPY}</b></div>
+        <div class="card-final-row"><span>현금</span><b>${escapeHTML(cash)}</b></div>
+        <div class="card-final-row"><span>순자산</span><b>${escapeHTML(worth)}</b></div>
+      </div>
       <div class="card-tap">(터치하면 타이틀로)</div>
     </div>`;
   document.getElementById('endScreen').onclick = () => {
@@ -1138,6 +1145,14 @@ function applyEffects(node) {
     const beforeCash = Number(state.economy.cash || 0);
     state.economy.cash = effects.setCash;
     queueMoneyCue(effects.setCash - beforeCash);
+  }
+  // 코인 "당함": 현금의 일정 비율을 깎는다(0.5 = -50%). 청산(cashAllInLoss)과 달리 일부만.
+  if (typeof effects.cashLossPct === 'number') {
+    const beforeCash = Number(state.economy.cash || 0);
+    const loss = Math.round(beforeCash * Math.max(0, Math.min(1, effects.cashLossPct)));
+    state.economy.cash = Math.max(0, beforeCash - loss);
+    queueMoneyCue(-loss);
+    applyFlags({ coin_last_loss: loss });
   }
   if (typeof effects.setDebt === 'number') state.economy.debt = effects.setDebt;
   if (typeof effects.setAssets === 'number') state.economy.assets = effects.setAssets;
